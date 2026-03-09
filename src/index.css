@@ -1,0 +1,150 @@
+@import url('https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color: #0f172a;
+    background-color: #d9e5e3;
+  }
+  body {
+    @apply font-body antialiased min-h-screen;
+    background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.55), transparent 30%),
+      radial-gradient(circle at 80% 0%, rgba(186, 208, 204, 0.4), transparent 25%),
+      #d9e5e3;
+    color: #0f172a;
+  }
+  a {
+    @apply text-inherit no-underline;
+  }
+  button {
+    @apply font-body;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-surface/80 border border-white/5 backdrop-blur-md;
+  }
+
+  .workspace-page {
+    background: linear-gradient(135deg, #dbe9e7 0%, #d6e2df 45%, #cddbd8 100%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 24px;
+    padding: 14px;
+    box-shadow: 0 24px 50px rgba(0, 0, 0, 0.25);
+  }
+
+  .workspace-panel {
+    background: rgba(249, 250, 249, 0.95);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 18px;
+    padding: 14px;
+    color: #0f172a;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+  }
+
+  .workspace-title {
+    font-family: 'Clash Display', 'Sora', sans-serif;
+    font-size: 1.3rem;
+    color: #0f172a;
+    margin: 0;
+  }
+
+  .workspace-muted {
+    color: #64748b;
+  }
+
+  .toast-card {
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 14px;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+    backdrop-filter: blur(16px);
+    animation: toast-enter 180ms ease-out;
+  }
+
+  .toast-card-success {
+    background: linear-gradient(135deg, rgba(235, 255, 247, 0.96), rgba(215, 249, 232, 0.94));
+    color: #166534;
+  }
+
+  .toast-card-error {
+    background: linear-gradient(135deg, rgba(255, 241, 242, 0.97), rgba(254, 226, 226, 0.95));
+    color: #991b1b;
+  }
+
+  .toast-card-info {
+    background: linear-gradient(135deg, rgba(240, 249, 255, 0.97), rgba(224, 242, 254, 0.95));
+    color: #0f4c81;
+  }
+
+  .story-filter-none {
+    filter: none;
+  }
+
+  .story-filter-grayscale {
+    filter: grayscale(1);
+  }
+
+  .story-filter-warm {
+    filter: sepia(0.24) saturate(1.1) hue-rotate(-12deg);
+  }
+
+  .story-filter-cool {
+    filter: saturate(1.08) hue-rotate(18deg);
+  }
+
+  .story-filter-vivid {
+    filter: saturate(1.3) contrast(1.08);
+  }
+
+  .story-animate-none {
+    animation: none;
+  }
+
+  .story-animate-float {
+    animation: story-float 3.2s ease-in-out infinite;
+  }
+
+  .story-animate-wave {
+    animation: story-wave 2.5s ease-in-out infinite;
+  }
+}
+
+@keyframes toast-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes story-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes story-wave {
+  0%,
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+  35% {
+    transform: rotate(-1.25deg) scale(1.01);
+  }
+  65% {
+    transform: rotate(1.25deg) scale(1.01);
+  }
+}

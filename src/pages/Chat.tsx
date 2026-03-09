@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { CSSProperties, FormEvent } from 'react'
 import {
+  ArrowLeft,
   AudioLines,
   CirclePlus,
   Compass,
@@ -530,6 +531,7 @@ export default function Chat() {
   const recordingStreamRef = useRef<MediaStream | null>(null)
   const [activePicker, setActivePicker] = useState<'emoji' | 'gif' | null>(null)
   const pickerRef = useRef<HTMLDivElement>(null)
+  const [mobileShowConvo, setMobileShowConvo] = useState(false)
 
   const activeChat = useMemo(
     () => chats.find((chat) => chat.id === activeChatId) || null,
@@ -840,6 +842,7 @@ export default function Chat() {
       setActiveChatId(result.chatId)
       setSearchText('')
       setUserResults([])
+      setMobileShowConvo(true)
       push({
         tone: 'success',
         title: result.created ? 'Conversation created' : 'Conversation opened',
@@ -861,6 +864,7 @@ export default function Chat() {
       setActiveChatId(result.chatId)
       setSearchText('')
       setUserResults([])
+      setMobileShowConvo(true)
       push({
         tone: 'success',
         title: result.created ? 'Conversation created' : 'Conversation opened',
@@ -1003,7 +1007,7 @@ export default function Chat() {
             </div>
           </aside>
 
-          <aside className="chat-list-panel">
+          <aside className={`chat-list-panel ${mobileShowConvo ? 'chat-mobile-hidden' : ''}`}>
             <form onSubmit={createDirectChat} className="chat-search-row">
               <Search size={16} className="chat-icon-muted" />
               <input
@@ -1061,7 +1065,7 @@ export default function Chat() {
                     <button
                       key={chat.id}
                       type="button"
-                      onClick={() => setActiveChatId(chat.id)}
+                      onClick={() => { setActiveChatId(chat.id); setMobileShowConvo(true) }}
                       className={`chat-list-item ${active ? 'chat-list-item-active' : ''}`}
                     >
                       {chat.avatarUrl ? (
@@ -1086,9 +1090,16 @@ export default function Chat() {
             </div>
           </aside>
 
-          <div className="chat-conversation">
+          <div className={`chat-conversation ${mobileShowConvo ? 'chat-mobile-visible' : ''}`}>
             <div className="chat-conversation-header">
               <div className="chat-conversation-user">
+                <button
+                  type="button"
+                  className="chat-back-btn"
+                  onClick={() => setMobileShowConvo(false)}
+                >
+                  <ArrowLeft size={18} />
+                </button>
                 {activeChat?.avatarUrl ? (
                   <img src={resolveMediaUrl(activeChat.avatarUrl)} alt={activeChat.title} className="chat-avatar-img" />
                 ) : (

@@ -20,32 +20,20 @@ const wordFilterChoices: StoryWordFilter[] = ['none', 'mild', 'strict']
 function ensureArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : []
 }
-
 function resolveMediaUrl(url?: string | null) {
   if (!url) return null
   if (url.startsWith('http://') || url.startsWith('https://')) return url
   return `${API_URL}${url}`
 }
-
 function formatStoryTime(isoTime: string) {
-  return new Date(isoTime).toLocaleString([], {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  return new Date(isoTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
-
-function filterClass(filter?: string | null) {
-  return `story-filter-${filter || 'none'}`
-}
-
+function filterClass(filter?: string | null) { return `story-filter-${filter || 'none'}` }
 function animationClass(animation?: string | null) {
   if (animation === 'pulse') return 'animate-pulse'
   if (animation === 'glow') return 'shadow-[0_0_36px_rgba(34,211,238,0.28)]'
   return `story-animate-${animation || 'none'}`
 }
-
 async function readVideoDuration(file: File): Promise<number | null> {
   if (!file.type.startsWith('video/')) return null
   return new Promise((resolve) => {
@@ -53,14 +41,8 @@ async function readVideoDuration(file: File): Promise<number | null> {
     const video = document.createElement('video')
     video.preload = 'metadata'
     video.src = url
-    video.onloadedmetadata = () => {
-      URL.revokeObjectURL(url)
-      resolve(Math.floor(video.duration || 0))
-    }
-    video.onerror = () => {
-      URL.revokeObjectURL(url)
-      resolve(null)
-    }
+    video.onloadedmetadata = () => { URL.revokeObjectURL(url); resolve(Math.floor(video.duration || 0)) }
+    video.onerror = () => { URL.revokeObjectURL(url); resolve(null) }
   })
 }
 
@@ -70,57 +52,32 @@ function StoryCard({ story, onOpen, isOwner }: { story: StoryItem; onOpen: () =>
   const viewed = !!story.viewedByMe || isOwner
 
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="group flex min-w-[78px] max-w-[78px] flex-col items-center text-center transition hover:-translate-y-0.5"
-    >
-      <div className="relative mb-2 h-[72px] w-[72px]">
-        <div
-          className={`h-full w-full rounded-full p-[3px] ${
-            viewed
-              ? 'border border-dashed border-slate-300 bg-white'
-              : 'bg-[conic-gradient(from_220deg,#f59e0b_0deg,#f43f5e_110deg,#a855f7_220deg,#f59e0b_360deg)]'
-          }`}
-        >
-          {avatar ? (
-            <img
-              src={avatar}
-              alt={story.authorName || 'Story'}
-              className="h-full w-full rounded-full border-[3px] border-white object-cover"
-            />
-          ) : (
-            <div className="grid h-full w-full place-items-center rounded-full border-[3px] border-white bg-slate-200 text-sm font-semibold text-slate-700">
-              {(story.authorName || story.authorUsername || '?').slice(0, 1).toUpperCase()}
-            </div>
-          )}
+    <button type="button" onClick={onOpen} className="hm-story-btn">
+      <div className="hm-story-ring-wrap">
+        <div className={`hm-story-ring ${viewed ? 'hm-ring-viewed' : 'hm-ring-unseen'}`}>
+          {avatar
+            ? <img src={avatar} alt={story.authorName || 'Story'} className="hm-story-avatar" />
+            : <div className="hm-story-avatar hm-story-avatar-fallback">{(story.authorName || story.authorUsername || '?').slice(0, 1).toUpperCase()}</div>
+          }
         </div>
-        {repostAvatar ? (
-          <img
-            src={repostAvatar}
-            alt={story.repostFromUserName || 'Shared from'}
-            className="absolute bottom-0 right-0 h-6 w-6 rounded-full border-2 border-white object-cover shadow-md"
-          />
-        ) : null}
+        {repostAvatar && (
+          <img src={repostAvatar} alt={story.repostFromUserName || ''} className="hm-story-repost-badge" />
+        )}
       </div>
-      <div className="w-full truncate text-[11px] font-medium text-slate-700">
-        {story.authorUsername || story.authorName || 'Story'}
-      </div>
+      <span className="hm-story-label">{story.authorUsername || story.authorName || 'Story'}</span>
     </button>
   )
 }
 
 function AddStoryTile({ onOpen }: { onOpen: () => void }) {
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="group flex min-w-[78px] max-w-[78px] flex-col items-center text-center transition hover:-translate-y-0.5"
-    >
-      <div className="mb-2 grid h-[72px] w-[72px] place-items-center rounded-full border-2 border-dashed border-slate-300 bg-white text-slate-400 transition group-hover:border-slate-400 group-hover:text-slate-600">
-        <CirclePlus size={24} />
+    <button type="button" onClick={onOpen} className="hm-story-btn">
+      <div className="hm-story-ring-wrap">
+        <div className="hm-add-ring">
+          <CirclePlus size={22} />
+        </div>
       </div>
-      <div className="w-full truncate text-[11px] font-medium text-slate-700">Add Story</div>
+      <span className="hm-story-label">Add Story</span>
     </button>
   )
 }
@@ -153,82 +110,42 @@ export default function Home() {
 
   useEffect(() => {
     async function loadHome() {
-      setLoading(true)
-      setError(null)
+      setLoading(true); setError(null)
       const [feedResult, storiesResult] = await Promise.allSettled([api.feed(), api.activeStories()])
-
-      if (feedResult.status === 'fulfilled') {
-        setPosts(ensureArray<FeedItem>(feedResult.value))
-      } else {
-        const message = (feedResult.reason as Error).message
-        setError(message)
-        push({ tone: 'error', title: 'Feed unavailable', message })
-      }
-
-      if (storiesResult.status === 'fulfilled') {
-        setStories(ensureArray<StoryItem>(storiesResult.value))
-      } else {
-        push({ tone: 'info', title: 'Stories unavailable', message: (storiesResult.reason as Error).message })
-        setStories([])
-      }
-
+      if (feedResult.status === 'fulfilled') setPosts(ensureArray<FeedItem>(feedResult.value))
+      else { setError((feedResult.reason as Error).message); push({ tone: 'error', title: 'Feed unavailable', message: (feedResult.reason as Error).message }) }
+      if (storiesResult.status === 'fulfilled') setStories(ensureArray<StoryItem>(storiesResult.value))
+      else { push({ tone: 'info', title: 'Stories unavailable', message: (storiesResult.reason as Error).message }); setStories([]) }
       setLoading(false)
     }
-
     void loadHome()
   }, [push])
 
   useEffect(() => {
-    if (!storyFile) {
-      setStoryPreviewUrl(null)
-      return
-    }
-    const previewUrl = URL.createObjectURL(storyFile)
-    setStoryPreviewUrl(previewUrl)
-    return () => URL.revokeObjectURL(previewUrl)
+    if (!storyFile) { setStoryPreviewUrl(null); return }
+    const url = URL.createObjectURL(storyFile)
+    setStoryPreviewUrl(url)
+    return () => URL.revokeObjectURL(url)
   }, [storyFile])
 
   useEffect(() => {
-    if (!composerOpen || composerStep !== 'details') {
-      setTagResults([])
-      return
-    }
-
+    if (!composerOpen || composerStep !== 'details') { setTagResults([]); return }
     const trimmed = tagQuery.trim()
-    if (trimmed.length < 2) {
-      setTagResults([])
-      return
-    }
-
+    if (trimmed.length < 2) { setTagResults([]); return }
     const timer = window.setTimeout(() => {
-      void api.searchUsers(trimmed)
-        .then((results) => {
-          const selectedIds = new Set(taggedUsers.map((entry) => entry.id))
-          setTagResults(results.filter((entry) => !selectedIds.has(entry.id)))
-        })
-        .catch((err) => {
-          push({ tone: 'error', title: 'Search failed', message: (err as Error).message })
-          setTagResults([])
-        })
+      void api.searchUsers(trimmed).then((results) => {
+        const ids = new Set(taggedUsers.map((e) => e.id))
+        setTagResults(results.filter((e) => !ids.has(e.id)))
+      }).catch((err) => { push({ tone: 'error', title: 'Search failed', message: (err as Error).message }); setTagResults([]) })
     }, 250)
-
     return () => window.clearTimeout(timer)
   }, [composerOpen, composerStep, tagQuery, taggedUsers, push])
 
   function resetComposer() {
-    setComposerOpen(false)
-    setComposerStep('upload')
-    setStoryFile(null)
-    setStoryPreviewUrl(null)
-    setStoryDuration(null)
-    setStoryCaption('')
-    setStoryStickerText('')
-    setStoryAnimationPreset('none')
-    setStoryMediaFilter('none')
-    setStoryWordFilter('none')
-    setTagQuery('')
-    setTagResults([])
-    setTaggedUsers([])
+    setComposerOpen(false); setComposerStep('upload'); setStoryFile(null)
+    setStoryPreviewUrl(null); setStoryDuration(null); setStoryCaption('')
+    setStoryStickerText(''); setStoryAnimationPreset('none'); setStoryMediaFilter('none')
+    setStoryWordFilter('none'); setTagQuery(''); setTagResults([]); setTaggedUsers([])
   }
 
   function handleMetricsChange(postId: string, changes: Partial<FeedItem>) {
@@ -238,11 +155,7 @@ export default function Home() {
   async function onStoryMediaChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] || null
     setStoryFile(file)
-    if (!file) {
-      setStoryDuration(null)
-      setComposerStep('upload')
-      return
-    }
+    if (!file) { setStoryDuration(null); setComposerStep('upload'); return }
     const duration = await readVideoDuration(file)
     setStoryDuration(duration)
     setComposerStep('details')
@@ -250,21 +163,13 @@ export default function Home() {
 
   function addTaggedUser(entry: UserSearchResult) {
     setTaggedUsers((prev) => [...prev, entry])
-    setTagResults((prev) => prev.filter((result) => result.id !== entry.id))
+    setTagResults((prev) => prev.filter((r) => r.id !== entry.id))
     setTagQuery('')
-  }
-
-  function removeTaggedUser(userId: string) {
-    setTaggedUsers((prev) => prev.filter((entry) => entry.id !== userId))
   }
 
   async function publishStory(event: FormEvent) {
     event.preventDefault()
-    if (!storyFile) {
-      push({ tone: 'error', title: 'No media selected', message: 'Choose a file first.' })
-      return
-    }
-
+    if (!storyFile) { push({ tone: 'error', title: 'No media selected', message: 'Choose a file first.' }); return }
     setPublishingStory(true)
     try {
       const form = new FormData()
@@ -274,22 +179,15 @@ export default function Home() {
       form.append('animationPreset', storyAnimationPreset)
       form.append('mediaFilter', storyMediaFilter)
       form.append('wordFilterLevel', storyWordFilter)
-      form.append('taggedUserIds', JSON.stringify(taggedUsers.map((entry) => entry.id)))
+      form.append('taggedUserIds', JSON.stringify(taggedUsers.map((e) => e.id)))
       if (storyDuration) form.append('mediaDurationSeconds', String(storyDuration))
-
       const created = await api.createStory(form)
       setStories((prev) => [created, ...ensureArray<StoryItem>(prev)])
       resetComposer()
-      push({
-        tone: 'success',
-        title: 'Story published',
-        message: created.isTrimmed ? 'Video was trimmed to 5 minutes automatically.' : 'Story is live for 24 hours.',
-      })
+      push({ tone: 'success', title: 'Story published', message: created.isTrimmed ? 'Video was trimmed to 5 minutes.' : 'Story is live for 24 hours.' })
     } catch (err) {
       push({ tone: 'error', title: 'Publish failed', message: (err as Error).message })
-    } finally {
-      setPublishingStory(false)
-    }
+    } finally { setPublishingStory(false) }
   }
 
   async function openStory(story: StoryItem) {
@@ -297,13 +195,9 @@ export default function Home() {
     if (story.authorId && story.authorId !== user?.id && !story.viewedByMe) {
       try {
         await api.viewStory(story.id)
-        setStories((prev) =>
-          ensureArray<StoryItem>(prev).map((entry) =>
-            entry.id === story.id
-              ? { ...entry, viewedByMe: true, viewerCount: (entry.viewerCount || 0) + 1 }
-              : entry,
-          ),
-        )
+        setStories((prev) => ensureArray<StoryItem>(prev).map((e) =>
+          e.id === story.id ? { ...e, viewedByMe: true, viewerCount: (e.viewerCount || 0) + 1 } : e
+        ))
       } catch (err) {
         push({ tone: 'info', title: 'Opened story', message: (err as Error).message })
       }
@@ -318,335 +212,613 @@ export default function Home() {
       push({ tone: 'success', title: 'Story reposted', message: 'The original author is marked on the card.' })
     } catch (err) {
       push({ tone: 'error', title: 'Repost failed', message: (err as Error).message })
-    } finally {
-      setRepostingStoryId(null)
-    }
+    } finally { setRepostingStoryId(null) }
   }
 
-  if (loading) return <div className="text-muted">Loading feed...</div>
+  if (loading) return <div className="hm-state">Loading feed…</div>
 
   const storyList = ensureArray<StoryItem>(stories)
   const postList = ensureArray<FeedItem>(posts)
 
   return (
-    <section className="space-y-4">
-      {error ? <div className="workspace-panel text-red-500">{error}</div> : null}
-      <div className="workspace-panel">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h2 className="workspace-title">Stories</h2>
-            <p className="mt-1 text-sm text-slate-500">Tap your circle to upload, then style and publish.</p>
-          </div>
-          <div className="text-xs uppercase tracking-[0.24em] text-slate-400">24h</div>
-        </div>
+    <>
+      <style>{styles}</style>
+      <div className="hm-root">
+        {error && <div className="hm-error">{error}</div>}
 
-        <div className="mt-5 rounded-[28px] border border-slate-200/80 bg-white/80 px-4 py-4">
-          <div className="flex gap-4 overflow-x-auto pb-1">
-            <AddStoryTile
-              onOpen={() => {
-                resetComposer()
-                setComposerOpen(true)
-              }}
-            />
-          {storyList.map((story) => (
-            <StoryCard
-              key={story.id}
-              story={story}
-              isOwner={story.authorId === user?.id}
-              onOpen={() => void openStory(story)}
-            />
-          ))}
-          </div>
-        </div>
-
-        {storyList.length === 0 ? (
-          <div className="mt-3 text-sm text-slate-500">
-            No active stories yet. Start the first one from the add circle.
-          </div>
-        ) : null}
-      </div>
-
-      <div className="workspace-panel">
-        <h2 className="workspace-title">Feed</h2>
-        <p className="workspace-muted mt-1 text-sm">Posts are interactive with likes, comments, and shares.</p>
-      </div>
-
-      {postList.length === 0 ? (
-        <div className="workspace-panel workspace-muted">
-          {error ? 'Feed is temporarily unavailable. Restart the backend and refresh.' : 'Feed is empty. Upload your first image, video, or audio post from the Create tab.'}
-        </div>
-      ) : (
-        postList.map((post) => <PostCard key={post.id} post={post} onMetricsChange={handleMetricsChange} />)
-      )}
-
-      {composerOpen ? (
-        <div className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-5xl overflow-hidden rounded-[28px] border border-white/30 bg-[linear-gradient(135deg,rgba(247,250,249,0.98),rgba(227,238,236,0.96))] shadow-[0_34px_80px_rgba(15,23,42,0.28)]">
-            <div className="flex items-center justify-between border-b border-slate-200/70 px-6 py-4">
-              <div>
-                <div className="text-xs uppercase tracking-[0.24em] text-slate-400">Story Studio</div>
-                <div className="mt-1 font-heading text-2xl text-slate-900">
-                  {composerStep === 'upload' ? 'Choose Media' : 'Style And Publish'}
-                </div>
-              </div>
-              <button type="button" onClick={resetComposer} className="rounded-full border border-slate-200 bg-white p-2 text-slate-500">
-                <X size={18} />
-              </button>
+        {/* ── Stories strip ── */}
+        <div className="hm-panel">
+          <div className="hm-panel-header">
+            <div>
+              <h2 className="hm-panel-title">Stories</h2>
+              <p className="hm-panel-sub">Tap your circle to upload · live for 24h</p>
             </div>
-
-            {composerStep === 'upload' ? (
-              <div className="grid gap-6 p-6 md:grid-cols-[1.1fr_0.9fr]">
-                <div className="rounded-[28px] bg-[linear-gradient(145deg,#0f172a,#111827)] p-6 text-slate-100">
-                  <div className="text-xs uppercase tracking-[0.24em] text-cyan-300">Step 1</div>
-                  <div className="mt-3 text-3xl font-heading">Upload the story media first.</div>
-                  <div className="mt-4 text-sm leading-6 text-slate-300">
-                    After upload you can write the caption, add sticker text, choose animation, apply filters, tag users, and publish.
-                  </div>
-                </div>
-
-                <div className="rounded-[28px] border border-dashed border-slate-300 bg-white/90 p-6 text-center">
-                  <input
-                    ref={uploadInputRef}
-                    type="file"
-                    accept="image/*,video/*,audio/*"
-                    onChange={onStoryMediaChange}
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => uploadInputRef.current?.click()}
-                    className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-black text-white shadow-lg"
-                  >
-                    <Upload size={30} />
-                  </button>
-                  <div className="mt-5 text-lg font-heading text-slate-900">Upload Story Media</div>
-                  <div className="mt-2 text-sm text-slate-500">Supported: image, video, audio.</div>
-                </div>
-              </div>
-            ) : (
-              <form onSubmit={publishStory} className="grid gap-6 p-6 lg:grid-cols-[1.06fr_0.94fr]">
-                <div className="space-y-4">
-                  <div className="relative overflow-hidden rounded-[30px] border border-white/30 bg-slate-950">
-                    {storyPreviewUrl && storyFile ? (
-                      <>
-                        {storyFile.type.startsWith('image/') ? (
-                          <img
-                            src={storyPreviewUrl}
-                            alt={storyFile.name}
-                            className={`h-[420px] w-full object-cover ${filterClass(storyMediaFilter)} ${animationClass(storyAnimationPreset)}`}
-                          />
-                        ) : storyFile.type.startsWith('video/') ? (
-                          <video
-                            src={storyPreviewUrl}
-                            controls
-                            className={`h-[420px] w-full object-cover ${filterClass(storyMediaFilter)} ${animationClass(storyAnimationPreset)}`}
-                          />
-                        ) : (
-                          <div className={`grid h-[420px] place-items-center bg-slate-900 text-slate-100 ${animationClass(storyAnimationPreset)}`}>
-                            <div className="text-center">
-                              <div className="text-xs uppercase tracking-[0.24em] text-cyan-300">Audio Story</div>
-                              <div className="mt-3 text-2xl font-heading">{storyCaption || 'Voice moment'}</div>
-                              <audio controls preload="metadata" className="mt-5 w-[min(320px,80vw)]">
-                                <source src={storyPreviewUrl} />
-                              </audio>
-                            </div>
-                          </div>
-                        )}
-                        {storyStickerText ? (
-                          <div className="absolute left-5 top-5 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur-md">
-                            {storyStickerText}
-                          </div>
-                        ) : null}
-                      </>
-                    ) : null}
-                  </div>
-
-                  <div className="grid gap-3 rounded-[22px] border border-slate-200 bg-white/92 p-4 md:grid-cols-3">
-                    <div className="rounded-2xl bg-slate-50 p-3 text-sm font-semibold text-slate-800">
-                      {storyFile?.name}
-                    </div>
-                    <div className="rounded-2xl bg-slate-50 p-3 text-sm font-semibold text-slate-800">
-                      {storyDuration ? `${storyDuration}s` : 'No duration'}
-                    </div>
-                    <div className={`rounded-2xl bg-slate-50 p-3 text-sm font-semibold ${(storyDuration || 0) > 300 ? 'text-amber-700' : 'text-slate-800'}`}>
-                      {(storyDuration || 0) > 300 ? 'Auto-trim to 5:00' : 'Ready'}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="rounded-[24px] border border-slate-200 bg-white/94 p-5">
-                    <textarea
-                      value={storyCaption}
-                      onChange={(event) => setStoryCaption(event.target.value)}
-                      placeholder="Write the story caption"
-                      className="min-h-[110px] w-full rounded-2xl border border-slate-300 bg-slate-50 p-3 text-sm text-slate-700 outline-none focus:border-slate-500"
-                    />
-                    <input
-                      value={storyStickerText}
-                      onChange={(event) => setStoryStickerText(event.target.value)}
-                      placeholder="Sticker text"
-                      className="mt-3 h-12 w-full rounded-2xl border border-slate-300 bg-slate-50 px-3 text-sm text-slate-700 outline-none focus:border-slate-500"
-                    />
-                    <div className="mt-3 grid gap-3 md:grid-cols-2">
-                      <select
-                        value={storyAnimationPreset}
-                        onChange={(event) => setStoryAnimationPreset(event.target.value as StoryAnimationPreset)}
-                        className="h-12 rounded-2xl border border-slate-300 bg-slate-50 px-3 text-sm text-slate-700 outline-none"
-                      >
-                        {animationChoices.map((choice) => (
-                          <option key={choice} value={choice}>
-                            animation: {choice}
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        value={storyMediaFilter}
-                        onChange={(event) => setStoryMediaFilter(event.target.value as StoryMediaFilter)}
-                        className="h-12 rounded-2xl border border-slate-300 bg-slate-50 px-3 text-sm text-slate-700 outline-none"
-                      >
-                        {filterChoices.map((choice) => (
-                          <option key={choice} value={choice}>
-                            filter: {choice}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <select
-                      value={storyWordFilter}
-                      onChange={(event) => setStoryWordFilter(event.target.value as StoryWordFilter)}
-                      className="mt-3 h-12 w-full rounded-2xl border border-slate-300 bg-slate-50 px-3 text-sm text-slate-700 outline-none"
-                    >
-                      {wordFilterChoices.map((choice) => (
-                        <option key={choice} value={choice}>
-                          word filter: {choice}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="rounded-[24px] border border-slate-200 bg-white/94 p-5">
-                    <input
-                      value={tagQuery}
-                      onChange={(event) => setTagQuery(event.target.value)}
-                      placeholder="Search username or email to tag"
-                      className="h-12 w-full rounded-2xl border border-slate-300 bg-slate-50 px-3 text-sm text-slate-700 outline-none"
-                    />
-
-                    {tagResults.length > 0 ? (
-                      <div className="mt-3 max-h-36 space-y-2 overflow-y-auto">
-                        {tagResults.map((entry) => (
-                          <button
-                            key={entry.id}
-                            type="button"
-                            onClick={() => addTaggedUser(entry)}
-                            className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-left"
-                          >
-                            <div>
-                              <div className="text-sm font-semibold text-slate-800">{entry.name}</div>
-                              <div className="text-xs text-slate-500">@{entry.username}</div>
-                            </div>
-                            <UserPlus size={16} className="text-slate-500" />
-                          </button>
-                        ))}
-                      </div>
-                    ) : null}
-
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {taggedUsers.map((entry) => (
-                        <button
-                          key={entry.id}
-                          type="button"
-                          onClick={() => removeTaggedUser(entry.id)}
-                          className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-800"
-                        >
-                          @{entry.username} x
-                        </button>
-                      ))}
-                      {taggedUsers.length === 0 ? <div className="text-sm text-slate-500">No tagged users.</div> : null}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setComposerStep('upload')}
-                      className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-                    >
-                      Change upload
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={publishingStory}
-                      className="rounded-full bg-black px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
-                    >
-                      {publishingStory ? 'Publishing...' : 'Publish Story'}
-                    </button>
-                  </div>
-                </div>
-              </form>
+            <span className="hm-badge-24">24h</span>
+          </div>
+          <div className="hm-stories-track">
+            <AddStoryTile onOpen={() => { resetComposer(); setComposerOpen(true) }} />
+            {storyList.map((story) => (
+              <StoryCard key={story.id} story={story} isOwner={story.authorId === user?.id} onOpen={() => void openStory(story)} />
+            ))}
+            {storyList.length === 0 && (
+              <p className="hm-stories-empty">No active stories yet — start the first one.</p>
             )}
           </div>
         </div>
-      ) : null}
 
-      {selectedStory ? (
-        <div className="fixed inset-0 z-[72] grid place-items-center bg-slate-950/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-4xl overflow-hidden rounded-[28px] border border-white/20 bg-[linear-gradient(140deg,#0f172a,#111827)] text-white shadow-[0_30px_80px_rgba(0,0,0,0.4)]">
-            <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-              <div>
-                <div className="text-sm font-semibold">{selectedStory.authorName || selectedStory.authorUsername || 'Story'}</div>
-                <div className="text-xs text-slate-300">{formatStoryTime(selectedStory.createdAt)}</div>
-                {selectedStory.repostFromUserUsername ? (
-                  <div className="mt-1 text-[11px] uppercase tracking-[0.22em] text-cyan-300">
-                    Shared from @{selectedStory.repostFromUserUsername}
+        {/* ── Feed ── */}
+        <div className="hm-panel hm-feed-header">
+          <h2 className="hm-panel-title">Feed</h2>
+          <p className="hm-panel-sub">Posts with likes, comments, and shares.</p>
+        </div>
+
+        {postList.length === 0 ? (
+          <div className="hm-panel hm-empty">
+            {error ? 'Feed temporarily unavailable. Restart the backend and refresh.' : 'Feed is empty. Upload your first post from the Create tab.'}
+          </div>
+        ) : (
+          postList.map((post) => <PostCard key={post.id} post={post} onMetricsChange={handleMetricsChange} />)
+        )}
+
+        {/* ── Story Composer Modal ── */}
+        {composerOpen && (
+          <div className="hm-overlay">
+            <div className="hm-modal hm-composer-modal">
+              {/* Modal header */}
+              <div className="hm-modal-header">
+                <div>
+                  <span className="hm-modal-eyebrow">Story Studio</span>
+                  <h3 className="hm-modal-title">{composerStep === 'upload' ? 'Choose Media' : 'Style & Publish'}</h3>
+                </div>
+                <button className="hm-close-btn" onClick={resetComposer}><X size={16} /></button>
+              </div>
+
+              {composerStep === 'upload' ? (
+                <div className="hm-upload-grid">
+                  <div className="hm-upload-hero">
+                    <span className="hm-upload-step">Step 1</span>
+                    <h4 className="hm-upload-heading">Upload your story media first.</h4>
+                    <p className="hm-upload-desc">After uploading you can style, caption, tag users, and publish.</p>
                   </div>
-                ) : null}
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShareStoryOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white"
-                >
-                  <SendHorizontal size={14} />
-                  Share
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void repostStory(selectedStory)}
-                  disabled={repostingStoryId === selectedStory.id}
-                  className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                >
-                  <RefreshCcw size={14} />
-                  {repostingStoryId === selectedStory.id ? 'Reposting...' : 'Repost'}
-                </button>
-                <button type="button" onClick={() => setSelectedStory(null)} className="rounded-full border border-white/15 bg-white/10 p-2">
-                  <X size={16} />
-                </button>
-              </div>
-            </div>
-            <div className={`overflow-hidden ${filterClass(selectedStory.mediaFilter)} ${animationClass(selectedStory.animationPreset)}`}>
-              <MediaRenderer
-                mediaUrl={selectedStory.mediaUrl}
-                mediaType={selectedStory.mediaType}
-                trimEndSeconds={selectedStory.trimEndSeconds}
-                className={selectedStory.mediaType === 'audio' ? 'p-8 bg-slate-900' : 'h-[72vh] w-full object-contain bg-black'}
-              />
-            </div>
-            <div className="border-t border-white/10 px-5 py-4 text-sm text-slate-200">
-              {selectedStory.caption || 'No caption'}
+                  <div className="hm-upload-drop">
+                    <input ref={uploadInputRef} type="file" accept="image/*,video/*,audio/*" onChange={onStoryMediaChange} className="hidden" />
+                    <button type="button" onClick={() => uploadInputRef.current?.click()} className="hm-upload-btn">
+                      <Upload size={26} />
+                    </button>
+                    <p className="hm-upload-label">Upload Story Media</p>
+                    <p className="hm-upload-hint">Image · Video · Audio</p>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={publishStory} className="hm-details-grid">
+                  {/* Preview */}
+                  <div className="hm-preview-col">
+                    <div className="hm-preview-frame">
+                      {storyPreviewUrl && storyFile ? (
+                        <>
+                          {storyFile.type.startsWith('image/') && (
+                            <img src={storyPreviewUrl} alt={storyFile.name} className={`hm-preview-media ${filterClass(storyMediaFilter)} ${animationClass(storyAnimationPreset)}`} />
+                          )}
+                          {storyFile.type.startsWith('video/') && (
+                            <video src={storyPreviewUrl} controls className={`hm-preview-media ${filterClass(storyMediaFilter)} ${animationClass(storyAnimationPreset)}`} />
+                          )}
+                          {!storyFile.type.startsWith('image/') && !storyFile.type.startsWith('video/') && (
+                            <div className={`hm-preview-audio ${animationClass(storyAnimationPreset)}`}>
+                              <span className="hm-preview-audio-label">Audio Story</span>
+                              <p className="hm-preview-audio-caption">{storyCaption || 'Voice moment'}</p>
+                              <audio controls preload="metadata" style={{ width: 'min(320px,80vw)' }}>
+                                <source src={storyPreviewUrl} />
+                              </audio>
+                            </div>
+                          )}
+                          {storyStickerText && (
+                            <div className="hm-sticker">{storyStickerText}</div>
+                          )}
+                        </>
+                      ) : null}
+                    </div>
+                    <div className="hm-file-meta">
+                      <span className="hm-meta-chip">{storyFile?.name}</span>
+                      <span className="hm-meta-chip">{storyDuration ? `${storyDuration}s` : 'No duration'}</span>
+                      <span className={`hm-meta-chip ${(storyDuration || 0) > 300 ? 'hm-meta-warn' : ''}`}>
+                        {(storyDuration || 0) > 300 ? 'Auto-trim 5:00' : 'Ready'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Controls */}
+                  <div className="hm-controls-col">
+                    <div className="hm-ctrl-panel">
+                      <textarea value={storyCaption} onChange={(e) => setStoryCaption(e.target.value)} placeholder="Write the story caption…" className="hm-textarea" />
+                      <input value={storyStickerText} onChange={(e) => setStoryStickerText(e.target.value)} placeholder="Sticker text" className="hm-input" />
+                      <div className="hm-selects-row">
+                        <select value={storyAnimationPreset} onChange={(e) => setStoryAnimationPreset(e.target.value as StoryAnimationPreset)} className="hm-select">
+                          {animationChoices.map((c) => <option key={c} value={c}>animation: {c}</option>)}
+                        </select>
+                        <select value={storyMediaFilter} onChange={(e) => setStoryMediaFilter(e.target.value as StoryMediaFilter)} className="hm-select">
+                          {filterChoices.map((c) => <option key={c} value={c}>filter: {c}</option>)}
+                        </select>
+                      </div>
+                      <select value={storyWordFilter} onChange={(e) => setStoryWordFilter(e.target.value as StoryWordFilter)} className="hm-select hm-select-full">
+                        {wordFilterChoices.map((c) => <option key={c} value={c}>word filter: {c}</option>)}
+                      </select>
+                    </div>
+
+                    <div className="hm-ctrl-panel">
+                      <input value={tagQuery} onChange={(e) => setTagQuery(e.target.value)} placeholder="Search to tag users…" className="hm-input" />
+                      {tagResults.length > 0 && (
+                        <div className="hm-tag-results">
+                          {tagResults.map((entry) => (
+                            <button key={entry.id} type="button" onClick={() => addTaggedUser(entry)} className="hm-tag-result-item">
+                              <div>
+                                <div className="hm-tag-name">{entry.name}</div>
+                                <div className="hm-tag-handle">@{entry.username}</div>
+                              </div>
+                              <UserPlus size={15} />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      <div className="hm-tagged-list">
+                        {taggedUsers.length === 0
+                          ? <span className="hm-no-tags">No tagged users.</span>
+                          : taggedUsers.map((entry) => (
+                            <button key={entry.id} type="button" onClick={() => setTaggedUsers((p) => p.filter((e) => e.id !== entry.id))} className="hm-tag-chip">
+                              @{entry.username} <X size={10} />
+                            </button>
+                          ))
+                        }
+                      </div>
+                    </div>
+
+                    <div className="hm-composer-footer">
+                      <button type="button" onClick={() => setComposerStep('upload')} className="hm-ghost-btn">
+                        Change upload
+                      </button>
+                      <button type="submit" disabled={publishingStory} className="hm-publish-btn">
+                        {publishingStory ? 'Publishing…' : 'Publish Story'}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
-        </div>
-      ) : null}
-      <ShareToChatModal
-        open={shareStoryOpen && !!selectedStory}
-        onClose={() => setShareStoryOpen(false)}
-        shareType="story"
-        shareItemId={selectedStory?.id || ''}
-        title="Share Story"
-      />
-    </section>
+        )}
+
+        {/* ── Story Viewer Modal ── */}
+        {selectedStory && (
+          <div className="hm-overlay">
+            <div className="hm-modal hm-viewer-modal">
+              <div className="hm-modal-header">
+                <div>
+                  <p className="hm-viewer-name">{selectedStory.authorName || selectedStory.authorUsername || 'Story'}</p>
+                  <p className="hm-viewer-time">{formatStoryTime(selectedStory.createdAt)}</p>
+                  {selectedStory.repostFromUserUsername && (
+                    <p className="hm-viewer-repost">Shared from @{selectedStory.repostFromUserUsername}</p>
+                  )}
+                </div>
+                <div className="hm-viewer-actions">
+                  <button className="hm-viewer-btn" onClick={() => setShareStoryOpen(true)}>
+                    <SendHorizontal size={14} /> Share
+                  </button>
+                  <button className="hm-viewer-btn" onClick={() => void repostStory(selectedStory)} disabled={repostingStoryId === selectedStory.id}>
+                    <RefreshCcw size={14} /> {repostingStoryId === selectedStory.id ? 'Reposting…' : 'Repost'}
+                  </button>
+                  <button className="hm-close-btn" onClick={() => setSelectedStory(null)}><X size={16} /></button>
+                </div>
+              </div>
+              <div className={`${filterClass(selectedStory.mediaFilter)} ${animationClass(selectedStory.animationPreset)}`}>
+                <MediaRenderer
+                  mediaUrl={selectedStory.mediaUrl}
+                  mediaType={selectedStory.mediaType}
+                  trimEndSeconds={selectedStory.trimEndSeconds}
+                  className={selectedStory.mediaType === 'audio' ? 'p-8 bg-slate-900' : 'h-[72vh] w-full object-contain bg-black'}
+                />
+              </div>
+              {selectedStory.caption && (
+                <div className="hm-viewer-caption">{selectedStory.caption}</div>
+              )}
+            </div>
+          </div>
+        )}
+
+        <ShareToChatModal
+          open={shareStoryOpen && !!selectedStory}
+          onClose={() => setShareStoryOpen(false)}
+          shareType="story"
+          shareItemId={selectedStory?.id || ''}
+          title="Share Story"
+        />
+      </div>
+    </>
   )
 }
+
+const styles = `
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+  .hm-root {
+    font-family: 'DM Sans', sans-serif;
+    color: #f0eee8;
+    display: flex; flex-direction: column; gap: 16px;
+    padding-bottom: 32px;
+  }
+
+  .hm-state {
+    padding: 48px; text-align: center;
+    color: rgba(240,238,232,0.4); font-size: 14px;
+  }
+  .hm-error {
+    background: rgba(248,113,113,0.08);
+    border: 1px solid rgba(248,113,113,0.2);
+    border-radius: 14px; padding: 14px 18px;
+    font-size: 13.5px; color: #f87171;
+  }
+
+  /* ── Panel ── */
+  .hm-panel {
+    background: #0e0e12;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 20px;
+    padding: 20px 20px 18px;
+  }
+  .hm-panel-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .hm-panel-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700; font-size: 17px;
+    letter-spacing: -0.3px; color: #f5f3ee; margin: 0 0 4px;
+  }
+  .hm-panel-sub {
+    font-size: 12.5px; font-weight: 300;
+    color: rgba(255,255,255,0.35); margin: 0;
+  }
+  .hm-badge-24 {
+    font-family: 'Syne', sans-serif;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 1.5px; color: #22d3a0;
+    background: rgba(34,211,160,0.1);
+    border: 1px solid rgba(34,211,160,0.2);
+    border-radius: 6px; padding: 3px 8px;
+  }
+  .hm-feed-header { padding-bottom: 16px; }
+  .hm-empty {
+    font-size: 13.5px; font-weight: 300;
+    color: rgba(255,255,255,0.35); line-height: 1.6;
+  }
+
+  /* ── Stories track ── */
+  .hm-stories-track {
+    display: flex; gap: 14px;
+    overflow-x: auto; padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .hm-stories-track::-webkit-scrollbar { display: none; }
+  .hm-stories-empty {
+    font-size: 12.5px; color: rgba(255,255,255,0.28);
+    font-weight: 300; padding: 8px 0; white-space: nowrap;
+  }
+
+  /* Story tiles */
+  .hm-story-btn {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 7px; flex-shrink: 0;
+    background: none; border: none; cursor: pointer;
+    padding: 0; transition: transform 0.18s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .hm-story-btn:hover { transform: translateY(-2px); }
+  .hm-story-ring-wrap { position: relative; width: 68px; height: 68px; }
+  .hm-story-ring {
+    width: 100%; height: 100%; border-radius: 50%;
+    padding: 3px; display: block;
+  }
+  .hm-ring-unseen {
+    background: conic-gradient(from 220deg, #7c3aed 0deg, #2dd4bf 160deg, #7c3aed 360deg);
+  }
+  .hm-ring-viewed {
+    background: rgba(255,255,255,0.08);
+    border: 1.5px dashed rgba(255,255,255,0.2);
+  }
+  .hm-story-avatar {
+    width: 100%; height: 100%;
+    border-radius: 50%; object-fit: cover;
+    border: 3px solid #0e0e12; display: block;
+  }
+  .hm-story-avatar-fallback {
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #7c3aed, #2dd4bf);
+    font-family: 'Syne', sans-serif;
+    font-weight: 800; font-size: 20px; color: #fff;
+  }
+  .hm-story-repost-badge {
+    position: absolute; bottom: 0; right: 0;
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid #0e0e12; object-fit: cover;
+  }
+  .hm-add-ring {
+    width: 100%; height: 100%; border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+    border: 1.5px dashed rgba(255,255,255,0.18);
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.4);
+    transition: border-color 0.18s, color 0.18s;
+  }
+  .hm-story-btn:hover .hm-add-ring {
+    border-color: rgba(124,58,237,0.5); color: #c4b5fd;
+  }
+  .hm-story-label {
+    font-size: 10.5px; font-weight: 400;
+    color: rgba(255,255,255,0.45);
+    max-width: 68px; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+    text-align: center;
+  }
+
+  /* ── Overlay ── */
+  .hm-overlay {
+    position: fixed; inset: 0; z-index: 70;
+    display: grid; place-items: center;
+    background: rgba(0,0,0,0.72);
+    backdrop-filter: blur(12px);
+    padding: 16px;
+  }
+  .hm-modal {
+    width: 100%; background: #0e0e12;
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.7);
+    max-height: 92vh; overflow-y: auto;
+  }
+  .hm-composer-modal { max-width: 960px; }
+  .hm-viewer-modal { max-width: 800px; }
+
+  .hm-modal-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+  .hm-modal-eyebrow {
+    font-size: 10.5px; font-weight: 500;
+    letter-spacing: 1.8px; text-transform: uppercase;
+    color: #22d3a0; display: block; margin-bottom: 5px;
+  }
+  .hm-modal-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800; font-size: 20px;
+    color: #f5f3ee; margin: 0; letter-spacing: -0.4px;
+  }
+  .hm-close-btn {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.5);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+    transition: background 0.18s, color 0.18s;
+  }
+  .hm-close-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+  /* ── Upload step ── */
+  .hm-upload-grid {
+    display: grid; gap: 20px; padding: 24px;
+  }
+  @media (min-width: 640px) { .hm-upload-grid { grid-template-columns: 1.1fr 0.9fr; } }
+  .hm-upload-hero {
+    background: linear-gradient(140deg, #1a0a2e, #0d1a3a);
+    border-radius: 18px; padding: 28px;
+    border: 1px solid rgba(124,58,237,0.2);
+  }
+  .hm-upload-step {
+    font-size: 10.5px; letter-spacing: 2px; text-transform: uppercase;
+    color: #22d3a0; font-weight: 600;
+  }
+  .hm-upload-heading {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700; font-size: 22px;
+    color: #f5f3ee; margin: 10px 0 14px;
+    letter-spacing: -0.4px; line-height: 1.25;
+  }
+  .hm-upload-desc {
+    font-size: 13.5px; font-weight: 300;
+    color: rgba(240,238,232,0.5); line-height: 1.7; margin: 0;
+  }
+  .hm-upload-drop {
+    background: rgba(255,255,255,0.03);
+    border: 1.5px dashed rgba(255,255,255,0.12);
+    border-radius: 18px; padding: 36px 24px;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    transition: border-color 0.18s;
+  }
+  .hm-upload-drop:hover { border-color: rgba(124,58,237,0.4); }
+  .hm-upload-btn {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: linear-gradient(135deg, #7c3aed, #5b21b6);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; border: none; cursor: pointer;
+    box-shadow: 0 4px 20px rgba(124,58,237,0.4);
+    transition: transform 0.18s, box-shadow 0.18s;
+  }
+  .hm-upload-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(124,58,237,0.5); }
+  .hm-upload-label {
+    font-family: 'Syne', sans-serif;
+    font-weight: 600; font-size: 15px; color: #f0eee8; margin: 0;
+  }
+  .hm-upload-hint { font-size: 12px; color: rgba(255,255,255,0.3); margin: 0; }
+
+  /* ── Details step ── */
+  .hm-details-grid {
+    display: grid; gap: 20px; padding: 24px;
+  }
+  @media (min-width: 768px) { .hm-details-grid { grid-template-columns: 1.05fr 0.95fr; } }
+
+  .hm-preview-col { display: flex; flex-direction: column; gap: 12px; }
+  .hm-preview-frame {
+    position: relative; background: #060608;
+    border-radius: 18px; overflow: hidden;
+    min-height: 300px;
+  }
+  .hm-preview-media {
+    height: 400px; width: 100%; object-fit: cover; display: block;
+  }
+  .hm-preview-audio {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; padding: 40px 24px; min-height: 300px;
+    background: #0d0d14;
+  }
+  .hm-preview-audio-label {
+    font-size: 10.5px; letter-spacing: 2px; text-transform: uppercase; color: #22d3a0;
+  }
+  .hm-preview-audio-caption {
+    font-family: 'Syne', sans-serif; font-weight: 600; font-size: 18px;
+    color: #f0eee8; text-align: center; margin: 0;
+  }
+  .hm-sticker {
+    position: absolute; top: 14px; left: 14px;
+    background: rgba(255,255,255,0.12); backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 20px; padding: 6px 14px;
+    font-size: 13px; font-weight: 500; color: #fff;
+  }
+  .hm-file-meta {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .hm-meta-chip {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 6px 12px;
+    font-size: 12px; color: rgba(255,255,255,0.5);
+    flex: 1; min-width: 80px; text-align: center;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .hm-meta-warn { color: #fbbf24; border-color: rgba(251,191,36,0.25); }
+
+  .hm-controls-col { display: flex; flex-direction: column; gap: 14px; }
+  .hm-ctrl-panel {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 16px; padding: 16px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .hm-textarea {
+    width: 100%; min-height: 100px; resize: vertical;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 12px; padding: 12px;
+    font-family: 'DM Sans', sans-serif; font-size: 13.5px; font-weight: 300;
+    color: #f0eee8; outline: none; line-height: 1.6;
+    transition: border-color 0.18s;
+    box-sizing: border-box;
+  }
+  .hm-textarea::placeholder { color: rgba(255,255,255,0.25); }
+  .hm-textarea:focus { border-color: rgba(124,58,237,0.4); }
+  .hm-input {
+    width: 100%; height: 44px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 12px; padding: 0 12px;
+    font-family: 'DM Sans', sans-serif; font-size: 13.5px;
+    color: #f0eee8; outline: none;
+    transition: border-color 0.18s; box-sizing: border-box;
+  }
+  .hm-input::placeholder { color: rgba(255,255,255,0.25); }
+  .hm-input:focus { border-color: rgba(124,58,237,0.4); }
+  .hm-selects-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .hm-select {
+    height: 44px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 12px; padding: 0 12px;
+    font-family: 'DM Sans', sans-serif; font-size: 13px;
+    color: rgba(255,255,255,0.6); outline: none;
+    cursor: pointer;
+  }
+  .hm-select-full { width: 100%; }
+  .hm-select option { background: #1a1a22; color: #f0eee8; }
+
+  .hm-tag-results {
+    display: flex; flex-direction: column; gap: 6px;
+    max-height: 150px; overflow-y: auto;
+  }
+  .hm-tag-result-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px; cursor: pointer;
+    color: rgba(255,255,255,0.6);
+    transition: background 0.15s, border-color 0.15s;
+    text-align: left;
+  }
+  .hm-tag-result-item:hover { background: rgba(124,58,237,0.12); border-color: rgba(124,58,237,0.25); color: #c4b5fd; }
+  .hm-tag-name { font-size: 13px; font-weight: 500; color: #f0eee8; }
+  .hm-tag-handle { font-size: 11.5px; color: rgba(255,255,255,0.35); }
+  .hm-tagged-list { display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; }
+  .hm-no-tags { font-size: 12.5px; color: rgba(255,255,255,0.28); font-weight: 300; }
+  .hm-tag-chip {
+    display: flex; align-items: center; gap: 5px;
+    padding: 5px 12px;
+    background: rgba(124,58,237,0.12);
+    border: 1px solid rgba(124,58,237,0.25);
+    border-radius: 20px; color: #c4b5fd;
+    font-size: 12px; font-weight: 500; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .hm-tag-chip:hover { background: rgba(248,113,113,0.12); border-color: rgba(248,113,113,0.25); color: #f87171; }
+
+  .hm-composer-footer {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .hm-ghost-btn {
+    padding: 10px 18px; border-radius: 10px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.5);
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 0.18s;
+  }
+  .hm-ghost-btn:hover { background: rgba(255,255,255,0.09); color: rgba(255,255,255,0.75); }
+  .hm-publish-btn {
+    padding: 11px 24px; border-radius: 10px;
+    background: linear-gradient(135deg, #7c3aed, #5b21b6);
+    border: none; color: #fff;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13.5px;
+    cursor: pointer; box-shadow: 0 4px 16px rgba(124,58,237,0.35);
+    transition: all 0.18s; letter-spacing: 0.1px;
+  }
+  .hm-publish-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(124,58,237,0.5); }
+  .hm-publish-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+  /* ── Viewer modal ── */
+  .hm-viewer-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 600; font-size: 15px; color: #f0eee8; margin: 0 0 3px;
+  }
+  .hm-viewer-time { font-size: 12px; color: rgba(255,255,255,0.35); margin: 0; }
+  .hm-viewer-repost {
+    font-size: 10.5px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: #22d3a0; margin: 5px 0 0;
+  }
+  .hm-viewer-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .hm-viewer-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: 10px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.7);
+    font-family: 'DM Sans', sans-serif; font-size: 12.5px; font-weight: 500;
+    cursor: pointer; transition: all 0.18s;
+  }
+  .hm-viewer-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+  .hm-viewer-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .hm-viewer-caption {
+    padding: 16px 24px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    font-size: 13.5px; font-weight: 300;
+    color: rgba(240,238,232,0.6); line-height: 1.6;
+  }
+`

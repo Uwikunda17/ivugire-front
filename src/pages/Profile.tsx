@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Eye, Heart, MessageCircle, SendHorizontal, Trash2 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { API_URL, api, type FeedItem, type StoryItem, type StoryViewer, type UserProfile } from '../api/client'
 import { useAuth } from '../state/AuthContext'
 import { useToast } from '../state/ToastContext'
@@ -62,6 +62,7 @@ function PostPreview({ post }: { post: FeedItem }) {
 export default function Profile() {
   const { logout } = useAuth()
   const { push } = useToast()
+  const { username: usernameParam } = useParams<{ username?: string }>()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [myPosts, setMyPosts] = useState<FeedItem[]>([])
   const [stories, setStories] = useState<StoryItem[]>([])
@@ -72,27 +73,43 @@ export default function Profile() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
+  const isOwnProfile = !usernameParam
 
   useEffect(() => {
     async function loadProfilePage() {
       setLoading(true)
       setError(null)
       try {
-        const [profileResult, postsResult] = await Promise.allSettled([api.getProfile(), api.myPosts()])
+        if (isOwnProfile) {
+          // Load current user's profile
+          const [profileResult, postsResult] = await Promise.allSettled([api.getProfile(), api.myPosts()])
 
-        if (profileResult.status === 'fulfilled') {
-          setProfile(profileResult.value)
-        } else {
-          setError((profileResult.reason as Error).message)
-          push({ tone: 'error', title: 'Profile unavailable', message: (profileResult.reason as Error).message })
-        }
+          if (profileResult.status === 'fulfilled') {
+            setProfile(profileResult.value)
+          } else {
+            setError((profileResult.reason as Error).message)
+            push({ tone: 'error', title: 'Profile unavailable', message: (profileResult.reason as Error).message })
+          }
 
-        if (postsResult.status === 'fulfilled') {
-          setMyPosts(ensureArray<FeedItem>(postsResult.value))
+          if (postsResult.status === 'fulfilled') {
+            setMyPosts(ensureArray<FeedItem>(postsResult.value))
+          } else {
+            setStatus((postsResult.reason as Error).message)
+            setMyPosts([])
+          }
         } else {
-          setStatus((postsResult.reason as Error).message)
+          // Load other user's profile - posts not yet available
+          if (!usernameParam) return
+          const profileResult = await Promise.allSettled([api.getUserProfileByUsername(usernameParam)])
+
+          if (profileResult[0].status === 'fulfilled') {
+            setProfile(profileResult[0].value)
+          } else {
+            setError((profileResult[0].reason as Error).message)
+            push({ tone: 'error', title: 'Profile unavailable', message: (profileResult[0].reason as Error).message })
+          }
+
           setMyPosts([])
-          push({ tone: 'info', title: 'Posts unavailable', message: (postsResult.reason as Error).message })
         }
       } catch (err) {
         setError((err as Error).message)
@@ -101,7 +118,7 @@ export default function Profile() {
       }
     }
     void loadProfilePage()
-  }, [push])
+  }, [usernameParam, isOwnProfile, push])
 
   useEffect(() => {
     async function loadStories() {
@@ -178,12 +195,14 @@ export default function Profile() {
           <div className="text-slate-500">@{profile.username}</div>
           <div className="text-sm text-slate-500">{profile.email}</div>
         </div>
-        <button
-          onClick={logout}
-          className="ml-auto px-4 py-2 rounded-xl bg-red-50 text-red-700 border border-red-200"
-        >
-          Logout
-        </button>
+        {isOwnProfile && (
+          <button
+            onClick={logout}
+            className="ml-auto px-4 py-2 rounded-xl bg-red-50 text-red-700 border border-red-200"
+          >
+            Logout
+          </button>
+        )}
       </div>
 
       <div className="workspace-panel space-y-3">
@@ -323,15 +342,17 @@ export default function Profile() {
                       </div>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => removeMyPost(post.id)}
-                    disabled={deletingPostId === post.id}
-                    className="self-end rounded-lg bg-red-600/90 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60 flex items-center gap-1"
-                  >
-                    <Trash2 size={13} />
-                    {deletingPostId === post.id ? 'Deleting...' : 'Delete'}
-                  </button>
+                  {isOwnProfile && (
+                    <button
+                      type="button"
+                      onClick={() => removeMyPost(post.id)}
+                      disabled={deletingPostId === post.id}
+                      className="self-end rounded-lg bg-red-600/90 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60 flex items-center gap-1"
+                    >
+                      <Trash2 size={13} />
+                      {deletingPostId === post.id ? 'Deleting...' : 'Delete'}
+                    </button>
+                  )}
                 </div>
               </article>
             ))}
@@ -339,12 +360,14 @@ export default function Profile() {
         )}
       </div>
 
-      <Link
-        to="/profile/edit"
-        className="block text-center py-3 rounded-xl bg-black text-white font-semibold"
-      >
-        Update Profile
-      </Link>
+      {isOwnProfile && (
+        <Link
+          to="/profile/edit"
+          className="block text-center py-3 rounded-xl bg-black text-white font-semibold"
+        >
+          Update Profile
+        </Link>
+      )}
 
       {status ? <p className="text-sm text-slate-600">{status}</p> : null}
     </section>

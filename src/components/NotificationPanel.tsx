@@ -1,8 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
 import { X, Heart, Users, MessageCircle, Trash2 } from 'lucide-react'
-import { api } from '../api/client'
+import { useNavigate } from 'react-router-dom'
+import { API_URL, api } from '../api/client'
 import { useToast } from '../state/ToastContext'
 import { useAuth } from '../state/AuthContext'
+
+function resolveMediaUrl(url?: string | null) {
+  if (!url) return undefined
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+  return `${API_URL}${url}`
+}
 
 type Notification = {
   id: string
@@ -34,6 +41,7 @@ export default function NotificationPanel({
 }) {
   const { push } = useToast()
   const { user: currentUser } = useAuth()
+  const navigate = useNavigate()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -154,9 +162,11 @@ export default function NotificationPanel({
     }
   }
 
-  const getNotificationText = (notification: Notification) => {
-    const action = notification.notificationType === 'follow' ? 'followed you' : 'liked your post'
-    return `${notification.actor?.name} ${action}`
+  const handleActorClick = (username?: string) => {
+    if (username) {
+      navigate(`/${username}`)
+      onClose()
+    }
   }
 
   const filteredNotifications =
@@ -217,7 +227,7 @@ export default function NotificationPanel({
                   <div className="notification-item-avatar">
                     {notification.actor?.avatarUrl ? (
                       <img
-                        src={notification.actor.avatarUrl}
+                        src={resolveMediaUrl(notification.actor.avatarUrl)}
                         alt={notification.actor?.name}
                         className="avatar-img"
                       />
@@ -231,7 +241,18 @@ export default function NotificationPanel({
                   <div className="notification-item-content">
                     <div className="notification-item-header">
                       {getNotificationIcon(notification.notificationType)}
-                      <p className="notification-item-text">{getNotificationText(notification)}</p>
+                      <button
+                        className="notification-item-text-btn"
+                        onClick={() => handleActorClick(notification.actor?.username)}
+                      >
+                        <span className="notification-actor-name">
+                          {notification.actor?.name || 'Someone'}
+                        </span>
+                        {' '}
+                        <span className="notification-action-text">
+                          {notification.notificationType === 'follow' ? 'followed you' : 'liked your post'}
+                        </span>
+                      </button>
                     </div>
                     <p className="notification-item-time">
                       {new Date(notification.createdAt).toLocaleDateString()} at{' '}

@@ -6,7 +6,7 @@ type AuthContextShape = {
   user: UserProfile | null
   token: string | null
   loading: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (emailOrUsername: string, password: string) => Promise<void>
   register: (name: string, email: string, password: string) => Promise<void>
   refreshProfile: () => Promise<void>
   logout: () => void
@@ -42,10 +42,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false))
   }, [token, refreshProfile])
 
-  async function login(email: string, password: string) {
+  async function login(emailOrUsername: string, password: string) {
     setLoading(true)
     try {
-      const res = await api.login({ email, password })
+      const res = await api.login({ emailOrUsername, password })
       setToken(res.token)
       localStorage.setItem('token', res.token)
       setUser(res.user)

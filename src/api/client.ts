@@ -237,7 +237,7 @@ export const api = {
       body: payload,
     })
   },
-  login(payload: { email: string; password: string }) {
+  login(payload: { emailOrUsername: string; password: string }) {
     return request<{ token: string; user: UserProfile }>('/api/auth/login', {
       method: 'POST',
       body: payload,
@@ -406,6 +406,15 @@ export const api = {
       isFollowedBy: boolean
       isMutualFollow: boolean
     }>(`/api/users/${userId}/profile`)
+  },
+  getUserProfileByUsername(username: string) {
+    return request<UserProfile & {
+      followerCount: number
+      followingCount: number
+      isFollowing: boolean
+      isFollowedBy: boolean
+      isMutualFollow: boolean
+    }>(`/api/users/${username}/profile-by-username`)
   },
   getFollowers(userId: string) {
     return request<UserSearchResult[]>(`/api/users/${userId}/followers`)

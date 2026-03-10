@@ -6,7 +6,7 @@ import { useAuth } from '../state/AuthContext'
 export default function AuthPage() {
   const { login, register, token, loading } = useAuth()
   const [mode, setMode] = useState<'login' | 'register'>('login')
-  const [email, setEmail] = useState('')
+  const [emailOrUsername, setEmailOrUsername] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -18,9 +18,9 @@ export default function AuthPage() {
     setError(null)
     try {
       if (mode === 'login') {
-        await login(email, password)
+        await login(emailOrUsername, password)
       } else {
-        await register(name, email, password)
+        await register(name, emailOrUsername, password)
       }
     } catch (err) {
       setError((err as Error).message)
@@ -529,13 +529,13 @@ export default function AuthPage() {
             )}
 
             <div className="auth-field">
-              <label className="auth-field__label">Email address</label>
+              <label className="auth-field__label">{mode === 'login' ? 'Email or username' : 'Email address'}</label>
               <input
                 required
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                type={mode === 'login' ? 'text' : 'email'}
+                value={emailOrUsername}
+                onChange={(e) => setEmailOrUsername(e.target.value)}
+                placeholder={mode === 'login' ? 'you@example.com or username' : 'you@example.com'}
                 className="auth-field__input"
               />
             </div>

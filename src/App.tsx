@@ -37,8 +37,7 @@ export default function App() {
               <Route path="/explore" element={<Explore />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/reels" element={<Reels />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/profile/edit" element={<UpdateProfile />} />
+              <Route path="/profile" element={<Profile />} />            <Route path="/:username" element={<Profile />} />              <Route path="/profile/edit" element={<UpdateProfile />} />
               <Route path="/create" element={<Create />} />
             </Route>
           </Routes>

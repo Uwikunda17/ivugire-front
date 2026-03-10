@@ -386,6 +386,154 @@ export const api = {
       method: 'DELETE',
     })
   },
+  // Follow endpoints
+  toggleFollow(userId: string) {
+    return request<{ following: boolean }>(`/api/users/${userId}/follow`, {
+      method: 'POST',
+    })
+  },
+  getFollowStatus(userId: string) {
+    return request<{ isFollowing: boolean; isFollowedBy: boolean; isMutualFollow: boolean }>(
+      `/api/users/${userId}/follow-status`,
+    )
+  },
+  // User profile endpoints
+  getUserProfile(userId: string) {
+    return request<UserProfile & {
+      followerCount: number
+      followingCount: number
+      isFollowing: boolean
+      isFollowedBy: boolean
+      isMutualFollow: boolean
+    }>(`/api/users/${userId}/profile`)
+  },
+  getFollowers(userId: string) {
+    return request<UserSearchResult[]>(`/api/users/${userId}/followers`)
+  },
+  getFollowing(userId: string) {
+    return request<UserSearchResult[]>(`/api/users/${userId}/following`)
+  },
+  // Message requests
+  getMessageRequests() {
+    return request<Array<{
+      id: string
+      chatId: string
+      senderId: string
+      senderName: string
+      senderUsername: string
+      senderAvatarUrl?: string | null
+      messageCount: number
+      status: string
+      createdAt: string
+    }>>('/api/message-requests')
+  },
+  acceptMessageRequest(requestId: string) {
+    return request<{ status: string }>(`/api/message-requests/${requestId}/accept`, {
+      method: 'POST',
+    })
+  },
+  declineMessageRequest(requestId: string) {
+    return request<{ status: string }>(`/api/message-requests/${requestId}/decline`, {
+      method: 'POST',
+    })
+  },
+  // Call endpoints
+  getActiveCalls() {
+    return request<Array<{
+      id: string
+      chatId: string
+      initiatorId: string
+      initiatorName: string
+      initiatorUsername: string
+      initiatorAvatarUrl?: string | null
+      recipientId?: string | null
+      recipientName?: string | null
+      recipientUsername?: string | null
+      recipientAvatarUrl?: string | null
+      callType: 'audio' | 'video'
+      status: 'ringing' | 'accepted' | 'declined' | 'ended'
+      startedAt?: string | null
+      createdAt: string
+    }>>('/api/calls/active')
+  },
+  getCallHistory(chatId: string) {
+    return request<Array<{
+      id: string
+      initiatorId: string
+      initiatorName: string
+      recipientId?: string | null
+      recipientName?: string | null
+      callType: 'audio' | 'video'
+      status: 'ringing' | 'accepted' | 'declined' | 'ended' | 'missed'
+      startedAt?: string | null
+      endedAt?: string | null
+      durationSeconds?: number | null
+      createdAt: string
+    }>>(`/api/chats/${chatId}/call-history`)
+  },
+  // Notification endpoints
+  getNotifications(limit: number = 20, offset: number = 0, unreadOnly: boolean = false) {
+    return request<Array<{
+      id: string
+      notificationType: 'follow' | 'like' | 'comment' | 'share' | 'message' | 'mention'
+      isRead: boolean
+      createdAt: string
+      text?: string | null
+      relatedPostId?: string | null
+      relatedStoryId?: string | null
+      relatedChatId?: string | null
+      actorId: string
+      actorName: string
+      actorUsername: string
+      actorAvatarUrl?: string | null
+    }>>(`/api/notifications?limit=${limit}&offset=${offset}&unreadOnly=${unreadOnly}`)
+  },
+  getUnreadNotificationCount() {
+    return request<{ unread: number }>('/api/notifications/unread/count')
+  },
+  markNotificationAsRead(notificationId: string) {
+    return request<{ status: string }>(`/api/notifications/${notificationId}/read`, {
+      method: 'POST',
+    })
+  },
+  markAllNotificationsAsRead() {
+    return request<{ status: string }>('/api/notifications/mark-all-read', {
+      method: 'POST',
+    })
+  },
+  deleteNotification(notificationId: string) {
+    return request<{ status: string }>(`/api/notifications/${notificationId}`, {
+      method: 'DELETE',
+    })
+  },
+  // Explore endpoints
+  exploreSearch(query: string = '', limit: number = 20) {
+    return request<Array<{
+      id: string
+      name: string
+      username: string
+      bio?: string | null
+      avatarUrl?: string | null
+      email: string
+      isFollowing: boolean
+      followerCount: number
+    }>>(`/api/explore/search?q=${encodeURIComponent(query)}&limit=${limit}`)
+  },
+  exploreTrending(type: 'users' | 'hashtags' = 'users', limit: number = 10) {
+    return request<
+      Array<{
+        id?: string
+        name?: string
+        username?: string
+        bio?: string | null
+        avatarUrl?: string | null
+        followerCount?: number
+        isFollowing?: boolean
+        tag?: string
+        count?: number
+      }>
+    >(`/api/explore/trending?type=${type}&limit=${limit}`)
+  },
 }
 
 export { API_URL }

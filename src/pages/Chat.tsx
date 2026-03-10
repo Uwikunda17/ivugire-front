@@ -534,14 +534,15 @@ export default function Chat() {
   const [mobileShowConvo, setMobileShowConvo] = useState(false)
 
   const activeChat = useMemo(
-    () => chats.find((chat) => chat.id === activeChatId) || null,
+    () => (Array.isArray(chats) ? chats.find((chat) => chat.id === activeChatId) : null) || null,
     [chats, activeChatId],
   )
 
   const filteredChats = useMemo(() => {
     const q = searchText.trim().toLowerCase()
-    if (!q) return chats
-    return chats.filter((chat) =>
+    const chatList = Array.isArray(chats) ? chats : []
+    if (!q) return chatList
+    return chatList.filter((chat) =>
       `${chat.title} ${chat.username || ''} ${chat.email || ''}`.toLowerCase().includes(q),
     )
   }, [chats, searchText])
@@ -562,19 +563,20 @@ export default function Chat() {
 
   async function loadChats(selectLatest = false) {
     const data = await api.listChats()
-    setChats(data)
-    if (selectLatest && data.length > 0) {
-      setActiveChatId(data[0].id)
+    const chatList = Array.isArray(data) ? data : []
+    setChats(chatList)
+    if (selectLatest && chatList.length > 0) {
+      setActiveChatId(chatList[0].id)
       return
     }
-    if (!activeChatId && data.length > 0) {
-      setActiveChatId(data[0].id)
+    if (!activeChatId && chatList.length > 0) {
+      setActiveChatId(chatList[0].id)
     }
   }
 
   async function loadMessages(chatId: string) {
     const data = await api.listMessages(chatId)
-    setMessages(data)
+    setMessages(Array.isArray(data) ? data : [])
     setReactionPickerFor(null)
     setTypingUsers([])
     setUnreadByChat((prev) => ({ ...prev, [chatId]: 0 }))
@@ -586,9 +588,10 @@ export default function Chat() {
       setStatus(null)
       try {
         const data = await api.listChats()
-        setChats(data)
-        if (data.length > 0) {
-          setActiveChatId(data[0].id)
+        const chatList = Array.isArray(data) ? data : []
+        setChats(chatList)
+        if (chatList.length > 0) {
+          setActiveChatId(chatList[0].id)
         }
       } catch (error) {
         setStatus((error as Error).message)

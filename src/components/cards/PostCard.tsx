@@ -18,7 +18,9 @@ function extractTopKeyword(comments: PostComment[]) {
   const stop = new Set(['this', 'that', 'with', 'have', 'your', 'from', 'they', 'were', 'just', 'what', 'when'])
   const counts = new Map<string, number>()
   for (const c of comments) {
-    const words = c.body.toLowerCase().match(/[a-z]{4,}/g) || []
+    const body = c.body?.trim() || ''
+    if (!body) continue
+    const words = body.toLowerCase().match(/[a-z]{4,}/g) || []
     for (const w of words) {
       if (stop.has(w)) continue
       counts.set(w, (counts.get(w) || 0) + 1)

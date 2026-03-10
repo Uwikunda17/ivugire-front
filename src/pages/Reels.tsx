@@ -13,7 +13,7 @@ export default function Reels() {
       setError(null)
       try {
         const data = await api.reels()
-        setReels(data)
+        setReels(Array.isArray(data) ? data : [])
       } catch (err) {
         setError((err as Error).message)
       } finally {

@@ -31,12 +31,13 @@
 
 .chat-rail {
   display: none;
-  border-radius: 20px;
+  border-radius: 0;
   background: #f9faf9;
-  padding: 12px;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  padding: 6px 4px;
+  box-shadow: inset -1px 0 0 #e2e8f0;
   flex-direction: column;
   justify-content: space-between;
+  width: 24px;
 }
 
 .chat-rail-top {
@@ -47,8 +48,8 @@
 
 .chat-logo {
   margin: 0 auto;
-  height: 40px;
-  width: 40px;
+  height: 24px;
+  width: 24px;
   border-radius: 999px;
   background: #000;
   color: #fff;
@@ -65,8 +66,8 @@
 
 .chat-rail-btn {
   margin: 0 auto;
-  height: 40px;
-  width: 40px;
+  height: 24px;
+  width: 24px;
   border-radius: 999px;
   border: 0;
   background: #fff;
@@ -1856,7 +1857,7 @@
 
 @media (min-width: 1024px) {
   .chat-grid {
-    grid-template-columns: 72px 320px 1fr;
+    grid-template-columns: 28px 320px 1fr;
   }
 
   .chat-rail {

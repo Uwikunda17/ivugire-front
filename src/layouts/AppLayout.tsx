@@ -56,7 +56,7 @@ export default function AppLayout() {
   }, [user, socket])
 
   return (
-    <div className={`min-h-screen bg-[#d9e5e3] text-slate-900 flex flex-col ${isChatPage ? 'pb-0 md:pb-0' : 'pb-16 md:pb-0'}`}>
+    <div className={`min-h-screen bg-[#d9e5e3] text-slate-900 flex flex-col pb-20 md:ml-32 md:pb-0 ${isChatPage ? '' : ''}`}>
       {isChatPage ? null : (
         <TopBar
           onNotificationOpen={() => setNotificationOpen(true)}

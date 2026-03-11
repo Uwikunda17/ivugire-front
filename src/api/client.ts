@@ -12,6 +12,16 @@ export type UserProfile = {
   createdAt?: string
 }
 
+export type MediaItem = {
+  id: string
+  mediaUrl: string
+  mediaType: 'image' | 'video' | 'audio'
+  mediaDurationSeconds?: number | null
+  trimEndSeconds?: number | null
+  isTrimmed: boolean
+  sequenceOrder: number
+}
+
 export type FeedItem = {
   id: string
   caption: string
@@ -32,6 +42,7 @@ export type FeedItem = {
   shareCount: number
   viewerCount: number
   likedByMe: boolean
+  mediaItems?: MediaItem[] // Multi-media support
 }
 
 export type PostComment = {
@@ -294,6 +305,9 @@ export const api = {
   myStories(scope: 'active' | 'archived') {
     return request<StoryItem[]>(`/api/stories/me?scope=${scope}`)
   },
+  getUserStories(userId: string) {
+    return request<StoryItem[]>(`/api/users/${userId}/stories`)
+  },
   createStory(formData: FormData) {
     return request<StoryItem>('/api/stories', {
       method: 'POST',
@@ -323,6 +337,28 @@ export const api = {
   },
   storyViewers(storyId: string) {
     return request<StoryViewer[]>(`/api/stories/${storyId}/viewers`)
+  },
+  deleteStory(storyId: string) {
+    return request<{ deleted: boolean; storyId: string }>(`/api/stories/${storyId}`, {
+      method: 'DELETE',
+    })
+  },
+  toggleStoryLike(storyId: string) {
+    return request<{ liked: boolean }>(`/api/stories/${storyId}/like`, {
+      method: 'POST',
+    })
+  },
+  listStoryComments(storyId: string) {
+    return request<PostComment[]>(`/api/stories/${storyId}/comments`)
+  },
+  addStoryComment(storyId: string, body: string) {
+    return request<{ id: string; body: string; createdAt: string }>(
+      `/api/stories/${storyId}/comments`,
+      {
+        method: 'POST',
+        body: { body },
+      },
+    )
   },
   getProfile() {
     return request<UserProfile>('/api/profile')

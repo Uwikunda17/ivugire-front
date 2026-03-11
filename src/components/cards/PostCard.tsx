@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Heart, MessageCircle, SendHorizontal } from 'lucide-react'
 import { api, type FeedItem, type PostComment } from '../../api/client'
 import ShareToChatModal from '../chat/ShareToChatModal'
+import UserProfileModal from '../UserProfileModal'
 import MediaRenderer from './MediaRenderer'
 import { API_URL } from '../../api/client'
 
@@ -9,6 +10,18 @@ type Props = {
   post: FeedItem
   onMetricsChange?: (postId: string, changes: Partial<FeedItem>) => void
 }
+
+const ChevronLeft = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="15 18 9 12 15 6" />
+  </svg>
+)
+
+const ChevronRight = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 18 15 12 9 6" />
+  </svg>
+)
 
 function formatDate(dateIso: string) {
   return new Date(dateIso).toLocaleString()
@@ -47,6 +60,23 @@ export default function PostCard({ post, onMetricsChange }: Props) {
   const [commentLoading, setCommentLoading] = useState(false)
   const [commentError, setCommentError] = useState<string | null>(null)
   const [shareOpen, setShareOpen] = useState(false)
+  const [profileModalOpen, setProfileModalOpen] = useState(false)
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0)
+
+  // Support both old format (single media) and new format (mediaItems array)
+  const mediaItems = post.mediaItems && post.mediaItems.length > 0 
+    ? post.mediaItems 
+    : [{ 
+        id: post.id,
+        mediaUrl: post.mediaUrl,
+        mediaType: post.mediaType,
+        mediaDurationSeconds: post.mediaDurationSeconds,
+        trimEndSeconds: post.trimEndSeconds,
+        isTrimmed: post.isTrimmed,
+        sequenceOrder: 1
+      }]
+  
+  const currentMedia = mediaItems[currentMediaIndex]
 
   const topKeyword = useMemo(() => extractTopKeyword(comments), [comments])
   const avatarUrl = resolveAvatar(post.authorAvatarUrl)
@@ -98,17 +128,63 @@ export default function PostCard({ post, onMetricsChange }: Props) {
     }
   }
 
+  function navigateMedia(direction: 'next' | 'prev') {
+    if (direction === 'next' && currentMediaIndex < mediaItems.length - 1) {
+      setCurrentMediaIndex(currentMediaIndex + 1)
+    } else if (direction === 'prev' && currentMediaIndex > 0) {
+      setCurrentMediaIndex(currentMediaIndex - 1)
+    }
+  }
+
   return (
     <article className="w-full max-w-[560px] mx-auto rounded-2xl overflow-hidden shadow-xl border border-slate-200/80 bg-white">
-      <MediaRenderer
-        mediaUrl={post.mediaUrl}
-        mediaType={post.mediaType}
-        trimEndSeconds={post.trimEndSeconds}
-        className="w-full h-[520px] object-cover bg-black"
-      />
+      {/* Media Container with Navigation */}
+      <div className="relative w-full h-[520px] bg-black">
+        <MediaRenderer
+          mediaUrl={currentMedia.mediaUrl}
+          mediaType={currentMedia.mediaType}
+          trimEndSeconds={currentMedia.trimEndSeconds}
+          className="w-full h-full object-cover"
+        />
+        
+        {/* Media Counter */}
+        {mediaItems.length > 1 && (
+          <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium">
+            {currentMediaIndex + 1}/{mediaItems.length}
+          </div>
+        )}
+        
+        {/* Navigation Arrows */}
+        {mediaItems.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={() => navigateMedia('prev')}
+              disabled={currentMediaIndex === 0}
+              className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/20 hover:bg-white/40 disabled:opacity-30 transition text-white"
+              aria-label="Previous media"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <button
+              type="button"
+              onClick={() => navigateMedia('next')}
+              disabled={currentMediaIndex === mediaItems.length - 1}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/20 hover:bg-white/40 disabled:opacity-30 transition text-white"
+              aria-label="Next media"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </>
+        )}
+      </div>
+
       <div className="p-4 space-y-3 text-slate-800">
         <div className="flex items-center justify-between text-sm text-slate-500">
-          <div className="flex items-center gap-2">
+          <button
+            onClick={() => setProfileModalOpen(true)}
+            className="flex items-center gap-2 hover:opacity-75 transition flex-1 text-left"
+          >
             {avatarUrl ? (
               <img src={avatarUrl} alt={post.authorName} className="h-9 w-9 rounded-full object-cover border border-slate-200" />
             ) : (
@@ -120,13 +196,13 @@ export default function PostCard({ post, onMetricsChange }: Props) {
               <div className="font-semibold text-slate-900">{post.authorName}</div>
               <div>@{post.authorUsername || post.authorEmail}</div>
             </div>
-          </div>
+          </button>
           <div>{formatDate(post.createdAt)}</div>
         </div>
 
         <p className="text-slate-800 whitespace-pre-wrap">{post.caption || 'No caption'}</p>
 
-        {post.isTrimmed ? (
+        {currentMedia.isTrimmed ? (
           <div className="text-xs text-amber-700 bg-amber-50 rounded-lg px-2 py-1 inline-block">
             Long video automatically limited to 5:00
           </div>
@@ -163,7 +239,7 @@ export default function PostCard({ post, onMetricsChange }: Props) {
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-3">
             <div className="text-xs uppercase tracking-wide text-slate-500">Quick Interpreter</div>
             <div className="text-xs text-slate-600">
-              Media: <span className="font-semibold">{post.mediaType}</span> | Comments:{' '}
+              Media: <span className="font-semibold">{currentMedia.mediaType}</span> | Comments:{' '}
               <span className="font-semibold">{commentCount}</span>{' '}
               {topKeyword ? (
                 <>
@@ -220,6 +296,11 @@ export default function PostCard({ post, onMetricsChange }: Props) {
             return next
           })
         }}
+      />
+      <UserProfileModal
+        username={post.authorUsername}
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
       />
     </article>
   )

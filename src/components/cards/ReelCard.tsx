@@ -10,6 +10,18 @@ type Props = {
   onMetricsChange?: (postId: string, changes: Partial<FeedItem>) => void
 }
 
+const ChevronLeft = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="15 18 9 12 15 6" />
+  </svg>
+)
+
+const ChevronRight = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 18 15 12 9 6" />
+  </svg>
+)
+
 export default function ReelCard({ reel, onMetricsChange }: Props) {
   const [liked, setLiked] = useState(reel.likedByMe)
   const [likeCount, setLikeCount] = useState(reel.likeCount || 0)
@@ -21,6 +33,22 @@ export default function ReelCard({ reel, onMetricsChange }: Props) {
   const [likeAnimating, setLikeAnimating] = useState(false)
   const [shared, setShared] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0)
+
+  // Support both old format (single media) and new format (mediaItems array)
+  const mediaItems = reel.mediaItems && reel.mediaItems.length > 0 
+    ? reel.mediaItems 
+    : [{ 
+        id: reel.id,
+        mediaUrl: reel.mediaUrl,
+        mediaType: reel.mediaType,
+        mediaDurationSeconds: reel.mediaDurationSeconds,
+        trimEndSeconds: reel.trimEndSeconds,
+        isTrimmed: reel.isTrimmed,
+        sequenceOrder: 1
+      }]
+  
+  const currentMedia = mediaItems[currentMediaIndex]
 
   async function handleLike() {
     setLikeAnimating(true)
@@ -66,6 +94,14 @@ export default function ReelCard({ reel, onMetricsChange }: Props) {
     if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
     if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
     return `${n}`
+  }
+
+  function navigateMedia(direction: 'next' | 'prev') {
+    if (direction === 'next' && currentMediaIndex < mediaItems.length - 1) {
+      setCurrentMediaIndex(currentMediaIndex + 1)
+    } else if (direction === 'prev' && currentMediaIndex > 0) {
+      setCurrentMediaIndex(currentMediaIndex - 1)
+    }
   }
 
   return (
@@ -421,14 +457,45 @@ export default function ReelCard({ reel, onMetricsChange }: Props) {
       <article className="reel-card">
         {/* Full-bleed media */}
         <MediaRenderer
-          mediaUrl={reel.mediaUrl}
-          mediaType={reel.mediaType}
-          trimEndSeconds={reel.trimEndSeconds}
+          mediaUrl={currentMedia.mediaUrl}
+          mediaType={currentMedia.mediaType}
+          trimEndSeconds={currentMedia.trimEndSeconds}
           className="reel-card__media"
         />
 
         {/* Gradient overlay */}
         <div className="reel-card__overlay" />
+
+        {/* Media Counter */}
+        {mediaItems.length > 1 && (
+          <div className="absolute top-4 right-4 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium z-10">
+            {currentMediaIndex + 1}/{mediaItems.length}
+          </div>
+        )}
+
+        {/* Navigation Arrows */}
+        {mediaItems.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={() => navigateMedia('prev')}
+              disabled={currentMediaIndex === 0}
+              className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/20 hover:bg-white/40 disabled:opacity-30 transition text-white z-10"
+              aria-label="Previous media"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <button
+              type="button"
+              onClick={() => navigateMedia('next')}
+              disabled={currentMediaIndex === mediaItems.length - 1}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/20 hover:bg-white/40 disabled:opacity-30 transition text-white z-10"
+              aria-label="Next media"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </>
+        )}
 
         {/* Right action sidebar */}
         <div className="reel-card__actions">
@@ -464,7 +531,7 @@ export default function ReelCard({ reel, onMetricsChange }: Props) {
 
         {/* Bottom info: author + caption */}
         <div className="reel-card__info">
-          {reel.isTrimmed && (
+          {currentMedia.isTrimmed && (
             <div className="reel-card__trimmed">⏱ Trimmed to 5:00</div>
           )}
           <div className="reel-card__author">

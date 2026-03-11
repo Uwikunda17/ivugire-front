@@ -4,33 +4,66 @@ import { NavLink, useLocation } from 'react-router-dom'
 type BottomNavProps = {
   unreadNotifications?: number
   unreadChat?: number
+  onNotificationsOpen?: () => void
 }
 
-const items = (unreadChat?: number, unreadNotifications?: number) => [
-  { to: '/', label: 'Home', icon: Home },
-  { to: '/chat', label: 'Chat', icon: MessageCircle, badge: unreadChat },
-  { to: '/create', label: 'Create', icon: Plus, isCreate: true },
-  { to: '/reels', label: 'Reels', icon: Video },
-  { to: '/notifications', label: 'Notifications', icon: Bell, badge: unreadNotifications },
-  { to: '/profile', label: 'Profile', icon: UserRound },
+const items = (
+  unreadChat?: number,
+  unreadNotifications?: number,
+  onNotificationsOpen?: () => void,
+) => [
+  { id: 'home', to: '/', label: 'Home', icon: Home },
+  { id: 'chat', to: '/chat', label: 'Chat', icon: MessageCircle, badge: unreadChat },
+  { id: 'create', to: '/create', label: 'Create', icon: Plus, isCreate: true },
+  { id: 'reels', to: '/reels', label: 'Reels', icon: Video },
+  // Notifications opens the panel instead of navigating to /notifications (which collides with /:username route)
+  { id: 'notifications', label: 'Notifications', icon: Bell, badge: unreadNotifications, onClick: onNotificationsOpen },
+  { id: 'profile', to: '/profile', label: 'Profile', icon: UserRound },
 ]
 
-export function BottomNav({ unreadNotifications = 0, unreadChat = 0 }: BottomNavProps) {
+export function BottomNav({
+  unreadNotifications = 0,
+  unreadChat = 0,
+  onNotificationsOpen,
+}: BottomNavProps) {
   const { pathname } = useLocation()
-  const navItems = items(unreadChat, unreadNotifications)
+  const navItems = items(unreadChat, unreadNotifications, onNotificationsOpen)
 
   return (
     <>
       <style>{styles}</style>
       <nav className="bn-rail">
-        {navItems.map(({ to, icon: Icon, badge, isCreate }) => {
+        {navItems.map(({ id, to, icon: Icon, label, badge, isCreate, onClick }) => {
           const active = pathname === to
-          return (
-            <NavLink key={to} to={to} className={`bn-rail-btn ${active ? 'bn-rail-btn-active' : ''}`}>
+          const content = (
+            <>
               <Icon size={18} />
+              <span className="bn-rail-label">{label}</span>
               {badge && badge > 0 ? <span className="bn-rail-badge">{badge > 99 ? '99+' : badge}</span> : null}
               {active ? <span className="bn-rail-dot" /> : null}
               {isCreate ? <span className="bn-rail-plus" /> : null}
+            </>
+          )
+
+          if (onClick && !to) {
+            return (
+              <button
+                key={id}
+                type="button"
+                className="bn-rail-btn"
+                onClick={(event) => {
+                  event.preventDefault()
+                  onClick()
+                }}
+              >
+                {content}
+              </button>
+            )
+          }
+
+          return (
+            <NavLink key={id} to={to!} className={`bn-rail-btn ${active ? 'bn-rail-btn-active' : ''}`}>
+              {content}
             </NavLink>
           )
         })}
@@ -80,6 +113,41 @@ const styles = `
   .bn-rail-btn-active {
     background: #111827;
     color: #fff;
+  }
+
+  /* Tooltip label */
+  .bn-rail-label {
+    position: absolute;
+    left: calc(100% + 14px);
+    top: 50%;
+    transform: translateY(-50%) translateX(-6px);
+    background: #111827;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    padding: 5px 10px;
+    border-radius: 8px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 150ms ease, transform 150ms ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+
+  /* Arrow pointing left toward the icon */
+  .bn-rail-label::before {
+    content: '';
+    position: absolute;
+    right: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 5px solid transparent;
+    border-right-color: #111827;
+  }
+
+  .bn-rail-btn:hover .bn-rail-label {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
   }
 
   .bn-rail-badge {
@@ -141,6 +209,27 @@ const styles = `
       transform: translateX(-50%);
       width: 4px;
       height: 8px;
+    }
+
+    /* On mobile, show label above the icon */
+    .bn-rail-label {
+      left: 50%;
+      top: auto;
+      bottom: calc(100% + 10px);
+      transform: translateX(-50%) translateY(4px);
+    }
+
+    .bn-rail-label::before {
+      right: auto;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border-right-color: transparent;
+      border-top-color: #111827;
+    }
+
+    .bn-rail-btn:hover .bn-rail-label {
+      transform: translateX(-50%) translateY(0);
     }
   }
 `

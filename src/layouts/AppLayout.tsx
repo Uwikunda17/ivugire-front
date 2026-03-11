@@ -66,7 +66,10 @@ export default function AppLayout() {
       <main className={`flex-1 w-full mx-auto ${isChatPage ? 'max-w-none p-0' : 'max-w-5xl px-4 py-4'}`}>
         <Outlet />
       </main>
-      <BottomNav unreadNotifications={unreadCount} />
+      <BottomNav
+        unreadNotifications={unreadCount}
+        onNotificationsOpen={() => setNotificationOpen(true)}
+      />
 
       <NotificationPanel
         isOpen={notificationOpen}

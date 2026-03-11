@@ -91,16 +91,20 @@ export default function UserProfileModal({ username, isOpen, onClose }: Props) {
     : null
 
   if (selectedStory) {
+    const currentIndex = userStories.findIndex((s) => s.id === selectedStory.id)
+    const prevStory = currentIndex > 0 ? userStories[currentIndex - 1] : null
+    const nextStory = currentIndex < userStories.length - 1 ? userStories[currentIndex + 1] : null
     return (
       <StoryViewer
         story={selectedStory}
+        previousStory={prevStory}
+        nextStory={nextStory}
         onClose={() => setSelectedStory(null)}
         onNavigate={(direction: 'next' | 'prev') => {
-          const currentIndex = userStories.findIndex((s) => s.id === selectedStory.id)
-          if (direction === 'next' && currentIndex < userStories.length - 1) {
-            setSelectedStory(userStories[currentIndex + 1])
-          } else if (direction === 'prev' && currentIndex > 0) {
-            setSelectedStory(userStories[currentIndex - 1])
+          if (direction === 'next' && nextStory) {
+            setSelectedStory(nextStory)
+          } else if (direction === 'prev' && prevStory) {
+            setSelectedStory(prevStory)
           }
         }}
       />

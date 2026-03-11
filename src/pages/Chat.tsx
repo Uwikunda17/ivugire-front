@@ -5,29 +5,23 @@ import {
   ArrowLeft,
   AudioLines,
   CirclePlus,
-  Compass,
   CornerUpLeft,
   FileText,
-  Home,
   ImagePlus,
-  MessageSquare,
   Mic,
   Pause,
   Paperclip,
   Play,
   Search,
   SendHorizonal,
-  Settings,
   Smile,
   SmilePlus,
   Square,
   Trash2,
-  UserRound,
   Video,
   X,
 } from 'lucide-react'
 import { io, type Socket } from 'socket.io-client'
-import { useNavigate } from 'react-router-dom'
 import {
   API_URL,
   api,
@@ -505,7 +499,6 @@ function PendingAttachmentStack({ files }: { files: File[] }) {
 export default function Chat() {
   const { user, token } = useAuth()
   const { push } = useToast()
-  const navigate = useNavigate()
   const [chats, setChats] = useState<ChatItem[]>([])
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -538,10 +531,6 @@ export default function Chat() {
     [chats, activeChatId],
   )
 
-  const unreadTotal = useMemo(
-    () => Object.values(unreadByChat).reduce((sum, value) => sum + (value || 0), 0),
-    [unreadByChat],
-  )
 
   const filteredChats = useMemo(() => {
     const q = searchText.trim().toLowerCase()

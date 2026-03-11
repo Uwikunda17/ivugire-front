@@ -51,7 +51,12 @@ export default function NotificationPanel({
     try {
       setLoading(true)
       const data = await api.getNotifications(50, 0, filter === 'unread')
-      setNotifications(data as unknown as Notification[])
+      const list = Array.isArray(data)
+        ? data
+        : Array.isArray((data as any)?.notifications)
+          ? (data as any).notifications
+          : []
+      setNotifications(list as Notification[])
 
       // Load unread count
       const { unread } = await api.getUnreadNotificationCount()
@@ -170,7 +175,9 @@ export default function NotificationPanel({
   }
 
   const filteredNotifications =
-    filter === 'unread' ? notifications.filter((n) => !n.isRead) : notifications
+    Array.isArray(notifications)
+      ? (filter === 'unread' ? notifications.filter((n) => !n.isRead) : notifications)
+      : []
 
   if (!isOpen) return null
 

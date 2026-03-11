@@ -192,56 +192,55 @@ export default function Profile() {
             </div>
           </div>
 
-          {storyList.length === 0
-            ? <p className="pf-empty">No {storyScope} stories.</p>
-            : (
-              <div className="pf-grid">
-                {storyList.map((story) => (
-                  <div key={story.id} className="pf-story-card">
-                    <div className="pf-card-media">
-                      <StoryMediaPreview story={story} />
-                    </div>
-                    <div className="pf-card-body">
-                      <p className="pf-card-title">{story.caption || 'Story'}</p>
-                      <div className="pf-card-dates">
-                        <span>Posted {formatDate(story.createdAt)}</span>
-                        <span>Expires {formatDate(story.expiresAt)}</span>
-                      </div>
-                      <div className="pf-viewer-row">
-                        <span className="pf-viewer-count"><Eye size={12} /> {story.viewerCount || 0} viewers</span>
-                        <button
-                          className="pf-toggle-viewers-btn"
-                          onClick={() => toggleStoryViewers(story.id)}
-                        >
-                          {openedStoryViewersId === story.id ? 'Hide' : 'Show'} viewers
-                        </button>
-                      </div>
-
-                      {openedStoryViewersId === story.id && (
-                        <div className="pf-viewers-list">
-                          {ensureArray<StoryViewer>(storyViewersById[story.id]).length === 0
-                            ? <span className="pf-viewers-empty">No viewers yet.</span>
-                            : ensureArray<StoryViewer>(storyViewersById[story.id]).map((viewer) => (
-                              <div key={`${viewer.id}-${viewer.viewedAt}`} className="pf-viewer-item">
-                                {viewer.avatarUrl
-                                  ? <img src={resolveAsset(viewer.avatarUrl) || undefined} alt={viewer.name} className="pf-viewer-avatar" />
-                                  : <div className="pf-viewer-avatar pf-viewer-avatar-fallback">{viewer.name.slice(0, 1).toUpperCase()}</div>
-                                }
-                                <div className="pf-viewer-info">
-                                  <span className="pf-viewer-name">{viewer.name} <span className="pf-viewer-handle">@{viewer.username}</span></span>
-                                  <span className="pf-viewer-time">{formatDate(viewer.viewedAt)}</span>
-                                </div>
-                              </div>
-                            ))
-                          }
-                        </div>
-                      )}
-                    </div>
+          {storyList.length === 0 ? (
+            <p className="pf-empty">No {storyScope} stories.</p>
+          ) : (
+            <div className="pf-grid pf-grid-stories">
+              {storyList.map((story) => (
+                <div key={story.id} className="pf-story-card">
+                  <div className="pf-card-media">
+                    <StoryMediaPreview story={story} />
                   </div>
-                ))}
-              </div>
-            )
-          }
+                  <div className="pf-card-body">
+                    <p className="pf-card-title">{story.caption || 'Story'}</p>
+                    <div className="pf-card-dates">
+                      <span>Posted {formatDate(story.createdAt)}</span>
+                      <span>Expires {formatDate(story.expiresAt)}</span>
+                    </div>
+                    <div className="pf-viewer-row">
+                      <span className="pf-viewer-count"><Eye size={12} /> {story.viewerCount || 0} viewers</span>
+                      <button
+                        className="pf-toggle-viewers-btn"
+                        onClick={() => toggleStoryViewers(story.id)}
+                      >
+                        {openedStoryViewersId === story.id ? 'Hide' : 'Show'} viewers
+                      </button>
+                    </div>
+
+                    {openedStoryViewersId === story.id && (
+                      <div className="pf-viewers-list">
+                        {ensureArray<StoryViewer>(storyViewersById[story.id]).length === 0
+                          ? <span className="pf-viewers-empty">No viewers yet.</span>
+                          : ensureArray<StoryViewer>(storyViewersById[story.id]).map((viewer) => (
+                            <div key={`${viewer.id}-${viewer.viewedAt}`} className="pf-viewer-item">
+                              {viewer.avatarUrl
+                                ? <img src={resolveAsset(viewer.avatarUrl) || undefined} alt={viewer.name} className="pf-viewer-avatar" />
+                                : <div className="pf-viewer-avatar pf-viewer-avatar-fallback">{viewer.name.slice(0, 1).toUpperCase()}</div>
+                              }
+                              <div className="pf-viewer-info">
+                                <span className="pf-viewer-name">{viewer.name} <span className="pf-viewer-handle">@{viewer.username}</span></span>
+                                <span className="pf-viewer-time">{formatDate(viewer.viewedAt)}</span>
+                              </div>
+                            </div>
+                          ))
+                        }
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ── Posts ── */}
@@ -251,37 +250,36 @@ export default function Profile() {
             <span className="pf-hint">Hover for details</span>
           </div>
 
-          {postList.length === 0
-            ? <p className="pf-empty">No posts yet.</p>
-            : (
-              <div className="pf-grid">
-                {postList.map((post) => (
-                  <article key={post.id} className="pf-post-card">
-                    <PostPreview post={post} />
-                    <div className="pf-post-overlay">
-                      <p className="pf-post-caption">{post.caption || 'No caption'}</p>
-                      <div className="pf-post-stats">
-                        <span><Heart size={13} /> {post.likeCount || 0}</span>
-                        <span><Eye size={13} /> {post.viewerCount || 0}</span>
-                        <span><MessageCircle size={13} /> {post.commentCount || 0}</span>
-                        <span><SendHorizontal size={13} /> {post.shareCount || 0}</span>
-                      </div>
-                      {isOwnProfile && (
-                        <button
-                          className="pf-delete-btn"
-                          onClick={() => removeMyPost(post.id)}
-                          disabled={deletingPostId === post.id}
-                        >
-                          <Trash2 size={13} />
-                          {deletingPostId === post.id ? 'Deleting…' : 'Delete'}
-                        </button>
-                      )}
+          {postList.length === 0 ? (
+            <p className="pf-empty">No posts yet.</p>
+          ) : (
+            <div className="pf-grid pf-grid-posts">
+              {postList.map((post) => (
+                <article key={post.id} className="pf-post-card">
+                  <PostPreview post={post} />
+                  <div className="pf-post-overlay">
+                    <p className="pf-post-caption">{post.caption || 'No caption'}</p>
+                    <div className="pf-post-stats">
+                      <span><Heart size={13} /> {post.likeCount || 0}</span>
+                      <span><Eye size={13} /> {post.viewerCount || 0}</span>
+                      <span><MessageCircle size={13} /> {post.commentCount || 0}</span>
+                      <span><SendHorizontal size={13} /> {post.shareCount || 0}</span>
                     </div>
-                  </article>
-                ))}
-              </div>
-            )
-          }
+                    {isOwnProfile && (
+                      <button
+                        className="pf-delete-btn"
+                        onClick={() => removeMyPost(post.id)}
+                        disabled={deletingPostId === post.id}
+                      >
+                        <Trash2 size={13} />
+                        {deletingPostId === post.id ? 'Deleting…' : 'Delete'}
+                      </button>
+                    )}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ── Footer CTA ── */}
@@ -481,6 +479,8 @@ const styles = `
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 14px;
   }
+  .pf-grid-stories { margin-top: 8px; }
+  .pf-grid-posts { margin-top: 8px; }
 
   /* ── Story card ── */
   .pf-story-card {
@@ -648,5 +648,51 @@ const styles = `
   .pf-status {
     font-size: 12.5px; color: rgba(255,255,255,0.35);
     text-align: center; padding: 4px 0;
+  }
+
+  /* ── Mobile tweaks ── */
+  @media (max-width: 640px) {
+    .pf-root { padding: 12px 10px 80px; gap: 16px; }
+    .pf-hero { padding: 22px 18px 18px; border-radius: 16px; }
+    .pf-hero-inner { align-items: flex-start; }
+    .pf-avatar { width: 70px; height: 70px; }
+    .pf-name { font-size: 18px; }
+    .pf-handle { font-size: 12px; }
+    .pf-meta-row { gap: 8px; }
+
+    /* Stories: horizontal strip */
+    .pf-grid-stories {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding: 6px 2px 4px;
+      scrollbar-width: none;
+    }
+    .pf-grid-stories::-webkit-scrollbar { display: none; }
+    .pf-story-card {
+      min-width: 96px;
+      max-width: 110px;
+      border-radius: 14px;
+      background: #111115;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .pf-card-media { height: 96px; border-bottom: 0; }
+    .pf-card-body { padding: 10px; gap: 6px; }
+    .pf-card-title { font-size: 12px; }
+    .pf-card-dates { display: none; }
+    .pf-viewer-row { display: none; }
+
+    /* Posts: 3-up square grid */
+    .pf-grid { gap: 6px; }
+    .pf-grid-posts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .pf-post-card { height: 120px; border-radius: 10px; }
+    .pf-post-overlay {
+      background: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.35));
+      padding: 10px;
+    }
+    .pf-post-caption { font-size: 11px; max-height: 34px; }
+    .pf-post-stats { grid-template-columns: repeat(2, 1fr); }
+    .pf-post-stats span { font-size: 11px; }
+    .pf-delete-btn { font-size: 11px; padding: 6px 10px; }
   }
 `

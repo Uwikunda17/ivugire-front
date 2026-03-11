@@ -1,81 +1,39 @@
-import { Home, Menu, MessageCircle, Plus, UserRound, Video, X, ArrowLeft } from 'lucide-react'
-import { useState } from 'react'
-import { NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { Home, MessageCircle, Plus, UserRound, Video, Bell } from 'lucide-react'
+import { NavLink, useLocation } from 'react-router-dom'
 
-const items = [
+type BottomNavProps = {
+  unreadNotifications?: number
+  unreadChat?: number
+}
+
+const items = (unreadChat?: number, unreadNotifications?: number) => [
   { to: '/', label: 'Home', icon: Home },
-  { to: '/chat', label: 'Chat', icon: MessageCircle },
-  { to: '/create', label: 'Create', icon: Plus },
+  { to: '/chat', label: 'Chat', icon: MessageCircle, badge: unreadChat },
+  { to: '/create', label: 'Create', icon: Plus, isCreate: true },
   { to: '/reels', label: 'Reels', icon: Video },
+  { to: '/notifications', label: 'Notifications', icon: Bell, badge: unreadNotifications },
   { to: '/profile', label: 'Profile', icon: UserRound },
 ]
 
-export function BottomNav() {
+export function BottomNav({ unreadNotifications = 0, unreadChat = 0 }: BottomNavProps) {
   const { pathname } = useLocation()
-  const navigate = useNavigate()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-
-  const handleNavClick = () => {
-    // Close menu on small screens after navigation
-    if (window.innerWidth < 768) {
-      setIsMenuOpen(false)
-    }
-  }
-
-  const handleBack = () => {
-    navigate(-1)
-  }
+  const navItems = items(unreadChat, unreadNotifications)
 
   return (
     <>
       <style>{styles}</style>
-      {/* Menu toggle button for small screens */}
-      <button
-        onClick={() => setIsMenuOpen(!isMenuOpen)}
-        className="bn-menu-toggle"
-        aria-label="Toggle navigation menu"
-      >
-        {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-      </button>
-
-      <nav className={`bn-nav ${isMenuOpen ? 'bn-nav-open' : ''}`}>
-        <div className="bn-track">
-          {/* Back button for small screens */}
-          <button
-            onClick={handleBack}
-            className="bn-back-btn"
-            aria-label="Go back"
-          >
-            <ArrowLeft size={20} />
-          </button>
-
-          {items.map(({ to, label, icon: Icon }) => {
-            const active = pathname === to
-            const isCreate = to === '/create'
-            return (
-              <NavLink
-                key={to}
-                to={to}
-                onClick={handleNavClick}
-                className={`bn-item ${active ? 'bn-active' : ''} ${isCreate ? 'bn-create' : ''}`}
-              >
-                {isCreate ? (
-                  <span className="bn-create-btn">
-                    <Icon size={20} />
-                  </span>
-                ) : (
-                  <>
-                    <span className="bn-icon-wrap">
-                      {active && <span className="bn-pip" />}
-                      <Icon size={20} />
-                    </span>
-                    <span className="bn-label">{label}</span>
-                  </>
-                )}
-              </NavLink>
-            )
-          })}
-        </div>
+      <nav className="bn-rail">
+        {navItems.map(({ to, icon: Icon, badge, isCreate }) => {
+          const active = pathname === to
+          return (
+            <NavLink key={to} to={to} className={`bn-rail-btn ${active ? 'bn-rail-btn-active' : ''}`}>
+              <Icon size={18} />
+              {badge && badge > 0 ? <span className="bn-rail-badge">{badge > 99 ? '99+' : badge}</span> : null}
+              {active ? <span className="bn-rail-dot" /> : null}
+              {isCreate ? <span className="bn-rail-plus" /> : null}
+            </NavLink>
+          )
+        })}
       </nav>
     </>
   )
@@ -84,255 +42,105 @@ export function BottomNav() {
 export default BottomNav
 
 const styles = `
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap');
-
-  /* Back button */
-  .bn-back-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    background: transparent;
-    border: none;
-    color: rgba(255,255,255,0.5);
-    cursor: pointer;
-    transition: color 0.2s, background 0.2s;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .bn-back-btn:active {
-    color: rgba(255,255,255,0.8);
-    background: rgba(124,58,237,0.15);
-  }
-
-  @media (hover: hover) {
-    .bn-back-btn:hover {
-      color: rgba(255,255,255,0.8);
-      background: rgba(124,58,237,0.1);
-    }
-  }
-
-  /* Menu toggle button */
-  .bn-menu-toggle {
-    display: none;
+  .bn-rail {
     position: fixed;
-    top: 16px;
-    left: 16px;
-    z-index: 60;
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #7c3aed, #5b21b6);
-    border: 1px solid rgba(255,255,255,0.1);
-    color: #fff;
-    cursor: pointer;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 4px 16px rgba(124,58,237,0.45);
-  }
-
-  .bn-menu-toggle:active {
-    transform: scale(0.93);
-  }
-
-  /* Navigation */
-  .bn-nav {
-    position: fixed;
-    z-index: 50;
-    padding: 0;
-    background: none;
-    pointer-events: none;
-  }
-
-  .bn-track {
-    pointer-events: auto;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(14, 14, 18, 0.85);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255,255,255,0.07);
-    padding: 20px 12px;
-    box-shadow:
-      0 0 0 1px rgba(255,255,255,0.03);
-    overflow-y: auto;
-  }
-
-  .bn-item {
+    left: 0;
+    top: 0;
+    height: 100vh;
+    width: 64px;
+    background: #fff;
+    border-right: 1px solid #e2e8f0;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 8px 6px;
-    text-decoration: none;
-    transition: opacity 0.18s;
+    padding: 14px 0;
+    gap: 14px;
+    z-index: 45;
+  }
+
+  .bn-rail-btn {
+    position: relative;
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    border: 0;
+    background: transparent;
+    color: #0f172a;
+    display: grid;
+    place-items: center;
+    transition: transform 120ms ease, background 120ms ease, color 120ms ease;
     -webkit-tap-highlight-color: transparent;
   }
 
-  .bn-icon-wrap {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px; 
-    height: 40px;
-    border-radius: 8px;
-    color: rgba(255,255,255,0.32);
-    transition: color 0.2s, background 0.2s;
+  .bn-rail-btn:hover {
+    transform: translateY(-2px);
+    background: #f8fafc;
   }
 
-  .bn-active .bn-icon-wrap {
-    color: #f0eee8;
-    background: rgba(124,58,237,0.15);
-  }
-
-  /* Active indicator pip */
-  .bn-pip {
-    position: absolute;
-    width: 2px; 
-    height: 12px;
-    border-radius: 2px;
-    background: linear-gradient(180deg, #7c3aed, #2dd4bf);
-    box-shadow: 0 0 8px rgba(124,58,237,0.6);
-  }
-
-  .bn-label {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 10px;
-    font-weight: 400;
-    color: rgba(255,255,255,0.28);
-    letter-spacing: 0.2px;
-    transition: color 0.2s;
-    text-align: center;
-  }
-
-  .bn-active .bn-label {
-    color: rgba(255,255,255,0.75);
-    font-weight: 500;
-  }
-
-  /* Create button */
-  .bn-create {
-    padding: 2px;
-  }
-
-  .bn-create-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px; 
-    height: 44px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #7c3aed, #5b21b6);
+  .bn-rail-btn-active {
+    background: #111827;
     color: #fff;
-    border: none;
-    cursor: pointer;
-    box-shadow:
-      0 0 0 1px rgba(255,255,255,0.1),
-      0 4px 16px rgba(124,58,237,0.45);
-    transition: transform 0.18s, box-shadow 0.18s;
   }
 
-  .bn-create:active .bn-create-btn {
-    transform: scale(0.93);
-    box-shadow: 0 2px 8px rgba(124,58,237,0.3);
+  .bn-rail-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #ff3b5f;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 6px 12px rgba(255, 59, 95, 0.35);
   }
 
-  @media (hover: hover) {
-    .bn-create:hover .bn-create-btn {
-      transform: scale(1.04);
-      box-shadow: 0 6px 22px rgba(124,58,237,0.55);
-    }
+  .bn-rail-dot {
+    position: absolute;
+    left: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 14px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, #ff3b5f, #ff8da1);
+    box-shadow: 0 0 10px rgba(255, 59, 95, 0.4);
   }
 
-  /* Small screens: bottom navigation bar */
+  .bn-rail-plus {
+    position: absolute;
+    bottom: -6px;
+    right: -6px;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    background: #ff9bd7;
+    box-shadow: 0 4px 8px rgba(255, 155, 215, 0.3);
+  }
+
   @media (max-width: 767px) {
-    .bn-nav {
-      bottom: 0;
-      left: 0;
-      right: 0;
-      width: 100%;
-      height: auto;
-    }
-
-    .bn-track {
+    .bn-rail {
       flex-direction: row;
-      justify-content: center;
       width: 100%;
-      height: auto;
-      border-radius: 16px 16px 0 0;
-      padding: 6px 3px;
-      margin: 0;
-      box-shadow:
-        0 0 0 1px rgba(255,255,255,0.03),
-        0 -4px 32px rgba(0,0,0,0.5);
+      height: 64px;
+      bottom: 0;
+      top: auto;
+      border-right: 0;
+      border-top: 1px solid #e2e8f0;
+      padding: 0 12px;
+      justify-content: space-around;
     }
 
-    .bn-item {
-      flex-direction: column;
-    }
-
-    .bn-pip {
-      top: -8px;
+    .bn-rail-dot {
+      top: -6px;
       left: 50%;
       transform: translateX(-50%);
-    }
-
-    .bn-back-btn {
-      display: none;
-    }
-
-    .bn-menu-toggle {
-      display: none !important;
-    }
-  }
-
-  /* Large screens: left sidebar */
-  @media (min-width: 768px) {
-    .bn-nav {
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100vh;
-    }
-
-    .bn-track {
-      flex-direction: column;
-      justify-content: flex-start;
-      height: 100vh;
-      width: auto;
-      min-width: 100px;
-      max-width: 120px;
-      border-radius: 0 16px 16px 0;
-      padding: 20px 12px;
-      margin: 0;
-      box-shadow:
-        0 0 0 1px rgba(255,255,255,0.03),
-        4px 0 32px rgba(0,0,0,0.5);
-    }
-
-    .bn-item {
-      flex-direction: column;
-      width: 100%;
-    }
-
-    .bn-pip {
-      left: -8px;
-      top: 50%;
-      transform: translateY(-50%);
-    }
-
-    .bn-back-btn {
-      display: flex;
-    }
-
-    .bn-menu-toggle {
-      display: none !important;
+      width: 4px;
+      height: 8px;
     }
   }
 `

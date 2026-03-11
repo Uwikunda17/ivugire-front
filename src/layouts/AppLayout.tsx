@@ -56,7 +56,7 @@ export default function AppLayout() {
   }, [user, socket])
 
   return (
-    <div className={`min-h-screen bg-[#d9e5e3] text-slate-900 flex flex-col pb-20 md:ml-32 md:pb-0 ${isChatPage ? '' : ''}`}>
+    <div className={`min-h-screen bg-[#d9e5e3] text-slate-900 flex flex-col pb-16 md:pb-0 md:ml-16 ${isChatPage ? '' : ''}`}>
       {isChatPage ? null : (
         <TopBar
           onNotificationOpen={() => setNotificationOpen(true)}
@@ -66,13 +66,7 @@ export default function AppLayout() {
       <main className={`flex-1 w-full mx-auto ${isChatPage ? 'max-w-none p-0' : 'max-w-5xl px-4 py-4'}`}>
         <Outlet />
       </main>
-      {isChatPage ? (
-        <div className="chat-bottom-nav-mobile">
-          <BottomNav />
-        </div>
-      ) : (
-        <BottomNav />
-      )}
+      <BottomNav unreadNotifications={unreadCount} />
 
       <NotificationPanel
         isOpen={notificationOpen}

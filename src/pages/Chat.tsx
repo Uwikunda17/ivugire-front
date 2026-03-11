@@ -538,6 +538,11 @@ export default function Chat() {
     [chats, activeChatId],
   )
 
+  const unreadTotal = useMemo(
+    () => Object.values(unreadByChat).reduce((sum, value) => sum + (value || 0), 0),
+    [unreadByChat],
+  )
+
   const filteredChats = useMemo(() => {
     const q = searchText.trim().toLowerCase()
     const chatList = Array.isArray(chats) ? chats : []
@@ -977,39 +982,6 @@ export default function Chat() {
     <section className="chat-screen">
       <div className="chat-shell">
         <div className="chat-grid">
-          <aside className="chat-rail">
-            <div className="chat-rail-top">
-              <div className="chat-logo">
-                <MessageSquare size={18} />
-              </div>
-              <div className="chat-rail-group">
-                <button type="button" className="chat-rail-btn" onClick={() => navigate('/')}>
-                  <Home size={17} />
-                </button>
-                <button type="button" className="chat-rail-btn" onClick={() => navigate('/create')}>
-                  <CirclePlus size={17} />
-                </button>
-                <button type="button" className="chat-rail-btn chat-rail-btn-active">
-                  <MessageSquare size={17} />
-                </button>
-                <button type="button" className="chat-rail-btn" onClick={() => navigate('/reels')}>
-                  <Video size={17} />
-                </button>
-                <button type="button" className="chat-rail-btn" onClick={() => navigate('/explore')}>
-                  <Compass size={17} />
-                </button>
-              </div>
-            </div>
-            <div className="chat-rail-bottom">
-              <button type="button" className="chat-rail-btn" onClick={() => navigate('/profile/edit')}>
-                <Settings size={17} />
-              </button>
-              <button type="button" className="chat-rail-btn chat-rail-btn-active" onClick={() => navigate('/profile')}>
-                <UserRound size={17} />
-              </button>
-            </div>
-          </aside>
-
           <aside className={`chat-list-panel ${mobileShowConvo ? 'chat-mobile-hidden' : ''}`}>
             <form onSubmit={createDirectChat} className="chat-search-row">
               <Search size={16} className="chat-icon-muted" />

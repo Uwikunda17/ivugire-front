@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
+import { API_URL } from '../api/client'
 
 type StoryMedia = {
   id: string
@@ -148,6 +149,12 @@ export default function StoryViewer({
   const inputRef = useRef<HTMLInputElement | null>(null)
 
   // Fallback carousel when no external story list provided
+  const resolveMediaUrl = (url?: string | null) => {
+    if (!url) return ''
+    if (url.startsWith('http://') || url.startsWith('https://')) return url
+    return `${API_URL}${url}`
+  }
+
   const activeStory: StoryMedia | undefined = injectedStory || mockStories[storyIndex]
   const prevStory = injectedStory ? previousStory : mockStories[storyIndex - 1] || null
   const nextStoryItem = injectedStory ? nextStory : mockStories[storyIndex + 1] || null
@@ -192,13 +199,13 @@ export default function StoryViewer({
                 <button className="sv-thumb-btn" onClick={() => handleNavigate('prev')}>
                   <div className="sv-thumb">
                     {prevStory.mediaType === 'video' ? (
-                      <video src={prevStory.mediaUrl} muted playsInline />
+                      <video src={resolveMediaUrl(prevStory.mediaUrl)} muted playsInline />
                     ) : (
-                      <img src={prevStory.mediaUrl} alt={prevStory.caption} />
+                      <img src={resolveMediaUrl(prevStory.mediaUrl)} alt={prevStory.caption} />
                     )}
                     <div className="sv-thumb-ring" />
                     <div className="sv-thumb-meta">
-                      <Avatar src={prevStory.authorAvatarUrl || undefined} name={prevStory.authorName} size={26} />
+                      <Avatar src={resolveMediaUrl(prevStory.authorAvatarUrl)} name={prevStory.authorName} size={26} />
                       <span>{prevStory.authorUsername || prevStory.authorName || 'Story'}</span>
                     </div>
                   </div>
@@ -219,7 +226,7 @@ export default function StoryViewer({
             </div>
 
             <div className="sv-header">
-              <Avatar src={activeStory.authorAvatarUrl || undefined} name={activeStory.authorName} size={38} />
+              <Avatar src={resolveMediaUrl(activeStory.authorAvatarUrl)} name={activeStory.authorName} size={38} />
               <div className="sv-header-text">
                 <div className="sv-header-name">{activeStory.authorName || 'Story'}</div>
                 <div className="sv-header-meta">@{activeStory.authorUsername || 'username'} · {activeStory.createdAt || '5h'}</div>
@@ -243,11 +250,11 @@ export default function StoryViewer({
 
             <div className="sv-media">
               {activeStory.mediaType === 'video' ? (
-                <video src={activeStory.mediaUrl} controls autoPlay muted />
+                <video src={resolveMediaUrl(activeStory.mediaUrl)} controls autoPlay muted />
               ) : activeStory.mediaType === 'audio' ? (
                 <div className="sv-audio-tile">Audio story</div>
               ) : (
-                <img src={activeStory.mediaUrl} alt={activeStory.caption} />
+                <img src={resolveMediaUrl(activeStory.mediaUrl)} alt={activeStory.caption} />
               )}
             </div>
 
@@ -276,13 +283,13 @@ export default function StoryViewer({
                 <button className="sv-thumb-btn" onClick={() => handleNavigate('next')}>
                   <div className="sv-thumb">
                     {nextStoryItem.mediaType === 'video' ? (
-                      <video src={nextStoryItem.mediaUrl} muted playsInline />
+                      <video src={resolveMediaUrl(nextStoryItem.mediaUrl)} muted playsInline />
                     ) : (
-                      <img src={nextStoryItem.mediaUrl} alt={nextStoryItem.caption} />
+                      <img src={resolveMediaUrl(nextStoryItem.mediaUrl)} alt={nextStoryItem.caption} />
                     )}
                     <div className="sv-thumb-ring" />
                     <div className="sv-thumb-meta">
-                      <Avatar src={nextStoryItem.authorAvatarUrl || undefined} name={nextStoryItem.authorName} size={26} />
+                      <Avatar src={resolveMediaUrl(nextStoryItem.authorAvatarUrl)} name={nextStoryItem.authorName} size={26} />
                       <span>{nextStoryItem.authorUsername || nextStoryItem.authorName || 'Story'}</span>
                     </div>
                   </div>

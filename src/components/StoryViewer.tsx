@@ -184,6 +184,7 @@ export default function StoryViewer({
   const likeCount = (activeStory?.likesCount || 0) + (isLiked ? 1 : 0)
 
   if (!activeStory) return null
+  const mediaSrc = resolveMediaUrl(activeStory.mediaUrl)
 
   return (
     <>
@@ -198,10 +199,12 @@ export default function StoryViewer({
                 </button>
                 <button className="sv-thumb-btn" onClick={() => handleNavigate('prev')}>
                   <div className="sv-thumb">
-                    {prevStory.mediaType === 'video' ? (
+                    {prevStory.mediaType === 'video' && resolveMediaUrl(prevStory.mediaUrl) ? (
                       <video src={resolveMediaUrl(prevStory.mediaUrl)} muted playsInline />
-                    ) : (
+                    ) : prevStory.mediaType === 'image' && resolveMediaUrl(prevStory.mediaUrl) ? (
                       <img src={resolveMediaUrl(prevStory.mediaUrl)} alt={prevStory.caption} />
+                    ) : (
+                      <div className="sv-thumb-fallback">No media</div>
                     )}
                     <div className="sv-thumb-ring" />
                     <div className="sv-thumb-meta">
@@ -241,20 +244,22 @@ export default function StoryViewer({
               </div>
             </div>
 
-            {likeCount > 0 ? (
-              <div className="sv-like-pill">
-                <HeartIcon size={14} filled />
-                {likeCount} likes
-              </div>
-            ) : null}
+              {likeCount > 0 ? (
+                <div className="sv-like-pill">
+                  <HeartIcon size={14} filled />
+                  {likeCount} likes
+                </div>
+              ) : null}
 
             <div className="sv-media">
-              {activeStory.mediaType === 'video' ? (
-                <video src={resolveMediaUrl(activeStory.mediaUrl)} controls autoPlay muted />
-              ) : activeStory.mediaType === 'audio' ? (
+              {activeStory.mediaType === 'video' && mediaSrc ? (
+                <video src={mediaSrc} controls autoPlay muted />
+              ) : activeStory.mediaType === 'audio' && mediaSrc ? (
                 <div className="sv-audio-tile">Audio story</div>
+              ) : activeStory.mediaType === 'image' && mediaSrc ? (
+                <img src={mediaSrc} alt={activeStory.caption} />
               ) : (
-                <img src={resolveMediaUrl(activeStory.mediaUrl)} alt={activeStory.caption} />
+                <div className="sv-audio-tile" style={{ background: 'rgba(0,0,0,0.2)', color: '#e5e7eb' }}>No media available</div>
               )}
             </div>
 
@@ -282,10 +287,12 @@ export default function StoryViewer({
                 </button>
                 <button className="sv-thumb-btn" onClick={() => handleNavigate('next')}>
                   <div className="sv-thumb">
-                    {nextStoryItem.mediaType === 'video' ? (
+                    {nextStoryItem.mediaType === 'video' && resolveMediaUrl(nextStoryItem.mediaUrl) ? (
                       <video src={resolveMediaUrl(nextStoryItem.mediaUrl)} muted playsInline />
-                    ) : (
+                    ) : nextStoryItem.mediaType === 'image' && resolveMediaUrl(nextStoryItem.mediaUrl) ? (
                       <img src={resolveMediaUrl(nextStoryItem.mediaUrl)} alt={nextStoryItem.caption} />
+                    ) : (
+                      <div className="sv-thumb-fallback">No media</div>
                     )}
                     <div className="sv-thumb-ring" />
                     <div className="sv-thumb-meta">
@@ -344,6 +351,15 @@ const styles = `
     overflow: hidden;
     position: relative;
     box-shadow: 0 18px 48px rgba(0,0,0,0.35);
+  }
+  .sv-thumb-fallback {
+    width: 170px; height: 270px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.06);
+    border: 1px dashed rgba(255,255,255,0.2);
+    display: grid; place-items: center;
+    color: rgba(255,255,255,0.6);
+    font-size: 12px;
   }
   .sv-thumb img, .sv-thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
   .sv-thumb::after {

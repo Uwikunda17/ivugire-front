@@ -16,6 +16,13 @@ function resolveMediaUrl(mediaUrl: string) {
 
 // ─── Audio Player ────────────────────────────────────────────────────────────
 function AudioPlayer({ src }: { src: string }) {
+  if (!src) {
+    return (
+      <div className="mr-audio" style={{ background: '#111318', color: '#94a3b8', border: '1px dashed rgba(148,163,184,0.4)', padding: '16px 18px', borderRadius: 16 }}>
+        No audio source available.
+      </div>
+    )
+  }
   const audioRef = useRef<HTMLAudioElement>(null)
   const [playing, setPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -587,6 +594,14 @@ export default function MediaRenderer({ mediaUrl, mediaType, trimEndSeconds, cla
     return (
       <div className={className} style={className ? undefined : { padding: '16px', background: 'rgba(15,17,20,0.9)' }}>
         <AudioPlayer src={src} />
+      </div>
+    )
+  }
+
+  if (!src) {
+    return (
+      <div className={className} style={{ background: '#0f1115', color: '#94a3b8', border: '1px dashed rgba(148,163,184,0.4)', borderRadius: 16, padding: 16, textAlign: 'center' }}>
+        No video source available.
       </div>
     )
   }
